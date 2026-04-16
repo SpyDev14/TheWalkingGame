@@ -1,0 +1,55 @@
+﻿<!-- Fuck WPF -->
+
+<Window x:Class="Launcher.MainWindow"
+		xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+		xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+		xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+		xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:local="clr-namespace:Launcher"
+		mc:Ignorable="d"
+		Title="The Walking Game — Launcher"
+		Height="111" Width="315"
+		SizeToContent="Manual"
+		ResizeMode="NoResize"
+		MinWidth="200">
+	<Grid Margin="10" VerticalAlignment="Stretch">
+		<GroupBox Header="Window"
+				  Grid.Row="0"
+				  VerticalAlignment="Top"
+				  HorizontalContentAlignment="Stretch"
+				  Padding="2 4 2 2">
+			<Grid>
+				<Grid.ColumnDefinitions>
+					<ColumnDefinition/>
+					<ColumnDefinition Width="0.2*"/>
+					<ColumnDefinition/>
+				</Grid.ColumnDefinitions>
+				<Grid.RowDefinitions>
+					<RowDefinition/>
+					<RowDefinition/>
+				</Grid.RowDefinitions>
+
+				<TextBox x:Name="WindowSizeHeightInput"
+						 Text="1920"
+						 TextAlignment="Center"/>
+				<TextBlock Grid.Column="1"
+						   TextAlignment="Center"
+						   VerticalAlignment="Stretch">
+					—
+				</TextBlock>
+				<TextBox x:Name="WindowSizeWidthInput"
+						 Text="1080"
+						 TextAlignment="Center"
+						 Grid.Column="2"/>
+			</Grid>
+		</GroupBox>
+		<StackPanel Orientation="Horizontal"
+					Grid.Row="2"
+					HorizontalAlignment="Right"
+					VerticalAlignment="Bottom">
+			<Button>Run</Button>
+			<Control Width="8"/>
+			<Button>Cancel</Button>
+		</StackPanel>
+	</Grid>
+</Window>
