@@ -27,7 +27,8 @@ public partial class MainForm : Form
 		foreach (var size in _renderSizes)
 			renderSizeSelect.Items.Add(size);
 
-		renderSizeSelect.Format += (_, e) => {
+		renderSizeSelect.Format += (_, e) =>
+		{
 			if (e.ListItem is Size size)
 				e.Value = $"{size.Width} x {size.Height}";
 		};
@@ -39,7 +40,7 @@ public partial class MainForm : Form
 	private void runBtn_Click(object sender, EventArgs e)
 	{
 		Hide();
-		Game.Program.Run();
-		Close();
+		try { Game.Program.Run(); }
+		finally { Close(); }
 	}
 }

@@ -5,6 +5,9 @@ using System.Diagnostics;
 
 internal class Player
 {
+	/// <summary>Radians per pixel</summary>
+	public float MouseSensitivity { get; set; } = 0.001f;
+
 	public Angle FOV {
 		get; set {
 			if (value.Degrees > 5) field = value;
@@ -21,44 +24,45 @@ internal class Player
 
 	private Angle _rotate = default;
 	public Angle Rotate => _rotate;
-
 	public Vector2 Position { get; private set; }
 
-	/// <summary>Radians per pixel</summary>
-	public float MouseSensitivity { get; set; } = 0.001f;
 
-	// In tiles per second
-	private const float MAX_SPEED = 0.8f;
-	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.25f;
-
-	private const float STEP_SIZE = 0.5f;
-	private bool _isSprint = false;
-
-	/// <summary>
-	/// Current speed for display in tiles per sec
-	/// </summary>
+	// ==== [ Movenment ] ===
+	/// <summary>Current speed for display in tiles per sec</summary>
 	public float CurrentSpeed { get; }
 
+	private const float MAX_SPEED = 0.8f; // tiles / second
+	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.25f;
+
+	///<summary>tiles / sec for get full speed</summary>
+	private const float ACCELERATION = 8.0f;
+	/// <summary>tiles / sec for full stop after lost control</summary>
+	private const float FRICTION = 12.0f;
+	///<summary>Inertion factor</summary> 
+	private const float INERTION = 0.95f;
+
+
+	// Step animation
 	/// <summary>
 	/// Value in range -1f..1f
 	/// <para>1f  : Full top</para>
 	/// <para>0   : Normal</para>
 	/// <para>-1f : Full down</para>
 	/// </summary>
-	public float StepAnimationState { get; private set; }
-	private const float STEP_ANIMATION_SPEED = 0.1f;
-
-	private const float VELOCITY_SATURATION = 1f;
-	private readonly Vector2 _saturationVelocity = new Vector2(VELOCITY_SATURATION, VELOCITY_SATURATION);
+	public float StepAnimationPhase => MathF.Sin(_stepAnimationPhase * MathF.PI * 2);
+	private float _stepAnimationPhase = 0; // 0..1
+	private const float STEP_SIZE = 0.5f; // tiles for full cycle (-1..1)
+	///<summary>Full cycles per second on full speed</summary>
+	private const float STEP_ANIMATION_SPEED = 12.0f;
 
 	private Vector2 _velocity;
+	private bool _isSprint = false;
+
 	public static Player SpawnAt(Vector2 pos) => new Player() { Position = pos };
 
+# warning remove and add spawn point pos to GameMap
 	public static Vector2? FindSpawnPoint(GameMap map, Vector2 pos)
 	{
-		int maxRadius = Math.Max(map.Size.Width, map.Size.Height);
-		//int currRadius = 0;
-
 		return pos;
 	}
 
@@ -115,25 +119,25 @@ internal class Player
 		if (Raylib.IsKeyDown(KeyboardKey.W))
 		{
 			Position += ProcessForMove(Rotate.AsDirection() * WALK_FORWARD_SPEED_FACTOR);
-			StepAnimationState += STEP_ANIMATION_SPEED;
+			_stepAnimationPhase += STEP_ANIMATION_SPEED;
 		}
 
 		if (Raylib.IsKeyDown(KeyboardKey.A))
 		{
 			Position += ProcessForMove(-((Rotate + Angle.FromDegrees(90)).AsDirection() * WALK_STRAFE_SPEED_FACTOR));
-			StepAnimationState -= STEP_ANIMATION_SPEED / 2;
+			_stepAnimationPhase -= STEP_ANIMATION_SPEED / 2;
 		}
 
 		if (Raylib.IsKeyDown(KeyboardKey.S))
 		{
 			Position += ProcessForMove(-(Rotate.AsDirection() * WALK_FORWARD_SPEED_FACTOR));
-			StepAnimationState -= STEP_ANIMATION_SPEED;
+			_stepAnimationPhase -= STEP_ANIMATION_SPEED;
 		}
 
 		if (Raylib.IsKeyDown(KeyboardKey.D))
 		{
 			Position += ProcessForMove((Rotate + Angle.FromDegrees(90)).AsDirection() * WALK_STRAFE_SPEED_FACTOR);
-			StepAnimationState += STEP_ANIMATION_SPEED / 2;
+			_stepAnimationPhase += STEP_ANIMATION_SPEED / 2;
 		}
 
 		if (Raylib.IsKeyPressed(KeyboardKey.KpAdd) && ViewDistance < 20)

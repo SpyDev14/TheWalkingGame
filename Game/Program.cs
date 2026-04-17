@@ -5,7 +5,7 @@ namespace Game;
 
 public class Program
 {
-	readonly static string ResourcesFolder = Path.GetFullPath("../../../Resources/");
+	readonly static string ResourcesFolder = Path.GetFullPath("../../../../Game/Resources/");
 	static int RenderWidth { get; set; } = (int)(1920 / 1.5);
 	static int RenderHeight { get; set; } = (int)(1080 / 1.5);
 	static int Horizont => RenderHeight / 2;
@@ -159,7 +159,7 @@ public class Program
 			{
 				// World
 				{
-					int displayedHorizont = (int)(Horizont + StepSize * player.StepAnimationState);
+					int displayedHorizont = (int)(Horizont + StepSize * player.StepAnimationPhase);
 					DrawRectangle(0, 0, RenderWidth, RenderHeight - displayedHorizont, theme.Sky);
 					DrawRectangleGradientV(0, displayedHorizont, RenderWidth, RenderHeight - displayedHorizont, theme.FloorMin, theme.FloorMax);
 
@@ -186,7 +186,7 @@ public class Program
 						float planeDistance = planeFactor * RenderHeight / MathF.Tan(player.FOV.Radians * planeFactor);
 						int wallHeight = (int)(planeDistance / distance);
 
-						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(StepSize * player.StepAnimationState);
+						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(StepSize * player.StepAnimationPhase);
 
 						Color color = Color.Lerp(theme.WallMin, theme.WallMax, t);
 						if (theme.WallTint is not null)
@@ -271,6 +271,7 @@ public class Program
 	}
 }
 
+// Потом
 public readonly record struct RunData(
 	Size RenderSize,
 	int TargetFps,

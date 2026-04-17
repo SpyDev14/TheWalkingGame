@@ -32,14 +32,14 @@ internal class Raycaster
 		{
 			> 0 => (mapX + 1 - pos.X) / direction.X,
 			< 0 => (pos.X - mapX) / -direction.X,
-			_ => float.PositiveInfinity // 0, NaN, но NaN здесь никогда не будет
+			_ => float.PositiveInfinity // 0 or NaN, но NaN здесь никогда не будет
 		};
 
 		float distanceToSideY = direction.Y switch
 		{
 			> 0 => (mapY + 1 - pos.Y) / direction.Y,
 			< 0 => (pos.Y - mapY) / -direction.Y,
-			_ => float.PositiveInfinity // 0, NaN, но NaN здесь никогда не будет
+			_ => float.PositiveInfinity // 0 or NaN, но NaN здесь никогда не будет
 		};
 
 		// Вместо постоянных перерасчётов
