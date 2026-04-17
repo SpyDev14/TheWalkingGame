@@ -3,7 +3,8 @@ using static Raylib_cs.Raylib;
 
 namespace Game;
 
-public class Program{
+public class Program
+{
 	readonly static string ResourcesFolder = Path.GetFullPath("../../../Resources/");
 	static int RenderWidth { get; set; } = (int)(1920 / 1.5);
 	static int RenderHeight { get; set; } = (int)(1080 / 1.5);
