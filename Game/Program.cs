@@ -90,8 +90,6 @@ internal static class Program
 		SetConfigFlags(ConfigFlags.VSyncHint);
 
 		SetTargetFPS(TargetFPS);
-		
-		ToggleFullscreen();
 
 		Palette colors = Themes.ColoredNight;
 
@@ -142,6 +140,9 @@ internal static class Program
 				planeFactor -= 0.01f;
 			if (IsKeyDown(KeyboardKey.V))
 				planeFactor += 0.01f;
+
+			if (IsKeyPressed(KeyboardKey.Z))
+				ToggleFullscreen();
 
 			if (IsKeyDown(KeyboardKey.C))
 				player.FOV -= Angle.FromDegrees(0.2f);

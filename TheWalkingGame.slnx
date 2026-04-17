@@ -1,4 +1,4 @@
 <Solution>
   <Project Path="Game/Game.csproj" />
-  <Project Path="Launcher/Launcher.csproj" Id="f71ee25a-450f-42ee-98ee-dc981a04b24a" />
+  <Project Path="Launcher/Launcher.csproj" Id="8e9d8173-fd07-44c5-a263-23d34149e3a4" />
 </Solution>
