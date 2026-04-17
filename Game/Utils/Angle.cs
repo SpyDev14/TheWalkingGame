@@ -14,6 +14,11 @@ internal struct Angle : IFormattable{
 
 	private Angle(float radians) => Radians = radians;
 	public Angle() { }
+
+	public static Angle Zero => new Angle(0);
+	/// <summary>90 degrees angle</summary>
+	public static Angle Right => FromDegrees(90);
+
 	public static Angle FromRadians(float radians) => new Angle(radians);
 	public static Angle FromDegrees(float degrees) => new Angle(DegreesToRadians(degrees));
 

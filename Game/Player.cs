@@ -1,6 +1,8 @@
 ﻿namespace Game;
 
-using Raylib_cs;
+using Raylib = Raylib_cs.Raylib;
+using Key = Raylib_cs.KeyboardKey;
+
 using System.Diagnostics;
 
 internal class Player
@@ -29,18 +31,16 @@ internal class Player
 
 	// ==== [ Movenment ] ===
 	/// <summary>Current speed for display in tiles per sec</summary>
-	public float CurrentSpeed { get; }
+	public float CurrentSpeed => _velocity.Length();
+	public float CurrentMaxSpeed => _isSprint ? MAX_SPRINT_SPEED : MAX_SPEED;
 
 	private const float MAX_SPEED = 0.8f; // tiles / second
-	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.25f;
+	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.5f;
 
 	///<summary>tiles / sec for get full speed</summary>
 	private const float ACCELERATION = 8.0f;
 	/// <summary>tiles / sec for full stop after lost control</summary>
-	private const float FRICTION = 12.0f;
-	///<summary>Inertion factor</summary> 
-	private const float INERTION = 0.95f;
-
+	private const float FRICTION = 2.0f;
 
 	// Step animation
 	/// <summary>
@@ -51,9 +51,12 @@ internal class Player
 	/// </summary>
 	public float StepAnimationPhase => MathF.Sin(_stepAnimationPhase * MathF.PI * 2);
 	private float _stepAnimationPhase = 0; // 0..1
-	private const float STEP_SIZE = 0.5f; // tiles for full cycle (-1..1)
+
+	private const float STEP_SIZE = 1f; // tiles in full cycle (-1..1)
 	///<summary>Full cycles per second on full speed</summary>
-	private const float STEP_ANIMATION_SPEED = 12.0f;
+	private float StepAnimationSpeed => CurrentMaxSpeed / STEP_SIZE;
+
+	private const float COLLISION_RADIUS = 0.3f; // tiles
 
 	private Vector2 _velocity;
 	private bool _isSprint = false;
@@ -66,89 +69,102 @@ internal class Player
 		return pos;
 	}
 
-	public void Move(float forward, float strafe)
-	{
-		_velocity.X += forward;
-		_velocity.Y += strafe;
-	}
-
-	public void Teleport(float x, float y)
-	{
-		_velocity = new();
-		Position = new(x, y);
-	}
-
-	public void Teleport(float x, float y, Angle rotate)
-	{
-		_rotate = rotate;
-		Teleport(x, y);
-	}
-
-
-
 	/// <summary>
 	/// Should be called any frame
 	/// </summary>
 	public void Update(TimeSpan deltaTime, GameMap map)
 	{
-# warning Сделать нормально
-		const float WALK_FORWARD_SPEED_FACTOR = 0.02f;
-		const float WALK_STRAFE_SPEED_FACTOR = 0.01f;
+		/*
+		 * map can be replaced by:
+		 *     _levelManager.GetCurrentLevel();
+		 * who be get by:
+		 *     [Dependency] ILevelManager _levelManager = default!;
+		 * what be realized like:
+		 *     dependencyContainer.Set<ILevelManager, LevelManager>(); // in Main
+		 *     dependencyContainer.Get<ILevelManager>(); // In [Dependency] filling
+		 * or just:
+		 *    Player(ILevelManaer levelMan) {...} // Here
+		 *    new Player(levelManager) // In Main
+		 */
+		const float MAX_DELTA = 0.033f;
+		float dt = MathF.Min((float)deltaTime.TotalSeconds, MAX_DELTA);
 
+		float forward = 0;
+		float strafe = 0;
+		
+		if (Raylib.IsKeyDown(Key.W)) forward += 1f;
+		if (Raylib.IsKeyDown(Key.S)) forward -= 1f;
+		if (Raylib.IsKeyDown(Key.D)) strafe += 1f;
+		if (Raylib.IsKeyDown(Key.A)) strafe -= 1f;
+
+		_isSprint = Raylib.IsKeyDown(Key.LeftShift);
+
+		Vector2 inputDirection = new(strafe, forward);
+		if (!inputDirection.IsZero())
+		{
+			inputDirection = inputDirection.Normalized();
+			Vector2 worldDirection = (
+				(Rotate + Angle.Right).AsDirection() * inputDirection.X +
+				Rotate.AsDirection() * inputDirection.Y
+			);
+
+			Vector2 targetVelocity = worldDirection * CurrentMaxSpeed;
+			_velocity = Vector2.Lerp(_velocity, targetVelocity, ACCELERATION * dt);
+		}
+		else
+		{
+			// No input, apply friction if has velocity
+			float friction = FRICTION * dt;
+			if (_velocity.Length() <= friction)
+				_velocity = Vector2.Zero; // memcp faster than checks
+
+			else _velocity -= _velocity.Normalized() * friction;
+		}
+
+		// Step animation
+		float speedFactor = Math.Clamp(_velocity.Length() / CurrentMaxSpeed, 0f, 1f);
+		float animDelta = StepAnimationSpeed * speedFactor * dt;
+		_stepAnimationPhase += animDelta;
+
+		// Move (apply velocity)
+		Position += CalculateCollisionCorrectMoveDelta(_velocity * dt, map);
+
+		// Mouse
 		_rotate.Radians += Raylib.GetMouseDelta().X * MouseSensitivity;
-
-		Vector2 ProcessForMove(Vector2 delta)
-		{
-			//if (map.IsCollided(Position))
-			//	return delta;
-
-			if (!map.IsCollided(Position + delta))
-				return delta;
-
-			delta = new Vector2(delta.X, 0);
-			if (!map.IsCollided(Position + delta))
-				return delta;
-
-			delta = new Vector2(0, delta.Y);
-			if (!map.IsCollided(Position + delta))
-				return delta;
-
-			return Vector2.Zero;
-		}
-
-		if (Raylib.IsKeyDown(KeyboardKey.W))
-		{
-			Position += ProcessForMove(Rotate.AsDirection() * WALK_FORWARD_SPEED_FACTOR);
-			_stepAnimationPhase += STEP_ANIMATION_SPEED;
-		}
-
-		if (Raylib.IsKeyDown(KeyboardKey.A))
-		{
-			Position += ProcessForMove(-((Rotate + Angle.FromDegrees(90)).AsDirection() * WALK_STRAFE_SPEED_FACTOR));
-			_stepAnimationPhase -= STEP_ANIMATION_SPEED / 2;
-		}
-
-		if (Raylib.IsKeyDown(KeyboardKey.S))
-		{
-			Position += ProcessForMove(-(Rotate.AsDirection() * WALK_FORWARD_SPEED_FACTOR));
-			_stepAnimationPhase -= STEP_ANIMATION_SPEED;
-		}
-
-		if (Raylib.IsKeyDown(KeyboardKey.D))
-		{
-			Position += ProcessForMove((Rotate + Angle.FromDegrees(90)).AsDirection() * WALK_STRAFE_SPEED_FACTOR);
-			_stepAnimationPhase += STEP_ANIMATION_SPEED / 2;
-		}
-
-		if (Raylib.IsKeyPressed(KeyboardKey.KpAdd) && ViewDistance < 20)
-			ViewDistance += 0.5f;
-
-		if (Raylib.IsKeyPressed(KeyboardKey.KpSubtract) && ViewDistance > 1)
-			ViewDistance -= 0.5f;
 	}
-
-	public bool CanMove(float forward, float strafe, GameMap map)
+# warning Rename it
+	public Vector2 CalculateCollisionCorrectMoveDelta(Vector2 previewDelta, GameMap map)
 	{
-		return true;
+		// If way is clear, let go
+		// If position is wrong, let escape
+		if (CanMove(Position + previewDelta, map))
+			return previewDelta;
+			//!CanMove(Position, map))
+
+		Vector2 stepByX = new Vector2(previewDelta.X, 0);
+		Vector2 stepByY = new Vector2(0, previewDelta.Y);
+
+		for (float dx = previewDelta.X; dx > 0.05f; dx -= 0.05f)
+		{
+			if (CanMove(Position + stepByX, map))
+				return stepByX;
+			stepByX.X -= dx;
+		}
+
+		for (float dy = previewDelta.Y; dy > 0.05f; dy -= 0.05f)
+		{
+			if (CanMove(Position + stepByY, map))
+				return stepByY;
+			stepByY.Y -= dy;
+		}
+
+		// Don't let moving throught walls
+		return Vector2.Zero;
+	}
+	
+	// NOTE: I think it's may be a part of GameMap
+	private bool CanMove(Vector2 newPos, GameMap map)
+	{
+		return !map.IsCollided(newPos);
 	}
 }

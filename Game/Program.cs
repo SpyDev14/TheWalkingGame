@@ -8,8 +8,9 @@ public class Program
 	readonly static string ResourcesFolder = Path.GetFullPath("../../../../Game/Resources/");
 	static int RenderWidth { get; set; } = (int)(1920 / 1.5);
 	static int RenderHeight { get; set; } = (int)(1080 / 1.5);
-	static int Horizont => RenderHeight / 2;
-	static readonly int StepSize = RenderHeight / 10;
+	static int HorizontPos => RenderHeight / 2;
+
+	static readonly int StepSize = RenderHeight / 80;
 
 	static int DisplayedMapSize => RenderHeight / 5;
 	static int TargetFPS => 60;
@@ -159,18 +160,30 @@ public class Program
 			{
 				// World
 				{
-					int displayedHorizont = (int)(Horizont + StepSize * player.StepAnimationPhase);
-					DrawRectangle(0, 0, RenderWidth, RenderHeight - displayedHorizont, theme.Sky);
-					DrawRectangleGradientV(0, displayedHorizont, RenderWidth, RenderHeight - displayedHorizont, theme.FloorMin, theme.FloorMax);
+					int horizontOffset = (int)(StepSize * (player.StepAnimationPhase));
+
+					// Sky & Floor
+					{
+						int skyY = 0;
+						int skyHeight = HorizontPos + horizontOffset;
+						int floorY = skyY + skyHeight;
+						int floorHeight = RenderHeight + skyY - skyHeight;
+
+						DrawRectangle(0, skyY, RenderWidth, skyHeight, theme.Sky);
+						DrawRectangleGradientV(0, floorY, RenderWidth, floorHeight, theme.FloorMin, theme.FloorMax);
+					}
 
 					Angle rayStep = player.FOV / RenderWidth;
 					Angle startAngle = player.Rotate - player.FOV / 2;
 					for (int i = 0; i < RenderWidth; i++)
 					{
-						Angle rayAngle = startAngle + rayStep * i;
+						Vector2 stepAnimPosOffset = player.CalculateCollisionCorrectMoveDelta(
+							(player.Rotate + Angle.Right).AsDirection() * player.StepAnimationPhase * 0*-0.03f, gameMap
+						);
 
+						Angle rayAngle = startAngle + rayStep * i;
 						HitInfo info = _raycaster.CastRay(
-							player.Position,
+							player.Position + stepAnimPosOffset,
 							rayAngle,
 							gameMap.IsCollided,
 							player.ViewDistance
@@ -186,7 +199,7 @@ public class Program
 						float planeDistance = planeFactor * RenderHeight / MathF.Tan(player.FOV.Radians * planeFactor);
 						int wallHeight = (int)(planeDistance / distance);
 
-						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(StepSize * player.StepAnimationPhase);
+						int topMargin = (RenderHeight - wallHeight) / 2 + horizontOffset;
 
 						Color color = Color.Lerp(theme.WallMin, theme.WallMax, t);
 						if (theme.WallTint is not null)
@@ -205,7 +218,29 @@ public class Program
 					}
 				}
 
+				// UI
 				var drawInterface = () => {
+					// Cross
+					int CenterPos = RenderWidth / 2;
+					const int CROSS_SIZE = 16;
+					const int CROSS_WIDTH = 2;
+					Color crossColor = ColorAlpha(Color.White, 0.5f);
+
+					DrawRectangle(
+						CenterPos - CROSS_SIZE / 2,
+						HorizontPos - CROSS_WIDTH / 2,
+						CROSS_SIZE,
+						CROSS_WIDTH,
+						crossColor
+					);
+					DrawRectangle(
+						CenterPos - CROSS_WIDTH / 2,
+						HorizontPos - CROSS_SIZE / 2,
+						CROSS_WIDTH,
+						CROSS_SIZE,
+						crossColor
+					);
+
 					int leftMargin = 8;
 					int topMargin = 8;
 
@@ -243,11 +278,10 @@ public class Program
 					DrawFPS(leftMargin, topMargin);
 
 					string[] labels = [
-						$"View distance: {player.ViewDistance}",
 						$"Position: {player.Position:0.##}",
 						$"Rotate: {player.Rotate:0.##}",
-						$"Plane factor: {planeFactor}",
-						$"FOV: {player.FOV}"
+						$"Step state: {player.StepAnimationPhase:0.#}",
+						$"{player.CurrentSpeed:0.###} / {player.CurrentMaxSpeed:0.###}",
 					];
 
 					for (int i = 0; i < labels.Length; i++)
