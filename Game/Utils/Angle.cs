@@ -2,8 +2,7 @@
 
 namespace Game.Utils;
 
-internal struct Angle : IFormattable
-{
+internal struct Angle : IFormattable{
 	public static class MathOperations
 	{
 		public static float RadiansToDegrees(float radians) => 180 / MathF.PI * radians;
@@ -14,7 +13,7 @@ internal struct Angle : IFormattable
 	}
 
 	private Angle(float radians) => Radians = radians;
-	public Angle Zero => new Angle(0);
+	public Angle() { }
 	public static Angle FromRadians(float radians) => new Angle(radians);
 	public static Angle FromDegrees(float degrees) => new Angle(DegreesToRadians(degrees));
 
@@ -46,7 +45,7 @@ internal struct Angle : IFormattable
 
 	public override string ToString() => ToString(null, null);
 	public string ToString(string? format, IFormatProvider? formatProvider)
-		=> $"<{Degrees.ToString(format)}° ({Radians.ToString(format)} R)>";
+		=> $"{Degrees.ToString(format)}° ({Radians.ToString(format)} R)";
 
 
 	public static Angle operator +(Angle a, Angle b) => new Angle(a.Radians + b.Radians);
@@ -54,4 +53,7 @@ internal struct Angle : IFormattable
 	public static Angle operator *(Angle a, float mul) => new Angle(a.Radians * mul);
 	public static Angle operator /(Angle a, float dividor) => new Angle(a.Radians / dividor);
 	public static Angle operator %(Angle a, float dividor) => new Angle(a.Radians % dividor);
+
+	public static bool operator >(Angle a, Angle b) => a.Radians > b.Radians;
+	public static bool operator <(Angle a, Angle b) => a.Radians < b.Radians;
 }

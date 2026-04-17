@@ -9,14 +9,12 @@ enum GameObject : byte
 
 internal class GameMap
 {
-	//private readonly GameObject[] _field;
 	public readonly Size Size;
 	public Vector2 PositionInCenter => new Vector2(Size.Width / 2, Size.Height / 2);
 	public ImmutableArray<bool> CollisionField { get; }
 
 	public GameMap(GameObject[] field, Size size)
 	{
-		//_field = field;
 		Size = size;
 		CollisionField = field.Select(x => x == GameObject.Wall).ToImmutableArray();
 	}
@@ -96,7 +94,6 @@ internal class GameMap
 			y < 0 || y >= Size.Height)
 			return true;
 
-		//return _field[y * Size.Width + x] == GameObject.Wall;
 		int idx = y * Size.Width + x;
 		return CollisionField[idx];
 	}

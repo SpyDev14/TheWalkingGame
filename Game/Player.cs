@@ -1,27 +1,21 @@
 ﻿namespace Game;
 
 using Raylib_cs;
-using Raylib = Raylib_cs.Raylib;
+using System.Diagnostics;
 
 internal class Player
 {
-	public Angle FOV
-	{
-		get;
-		set
-		{
-			if (value.Radians <= 0) throw new ArgumentException($"{nameof(FOV)} cannot be <= 0");
-			field = value;
+	public Angle FOV {
+		get; set {
+			if (value.Degrees > 5) field = value;
+			else Debug.Write($"WARN {nameof(FOV)}.set: cannot be < 5, ignore set.");
 		}
-	} = Angle.FromDegrees(60);
+	} = Angle.FromDegrees(85);
 
-	public float ViewDistance
-	{
-		get;
-		set
-		{
-			if (value <= 0) throw new ArgumentException($"{nameof(ViewDistance)} cannot be <= 0");
-			field = value;
+	public float ViewDistance {
+		get; set {
+			if (value > 0) field = value;
+			else Debug.Write($"WARN {nameof(ViewDistance)}.set: cannot be < 5, ignore set.");
 		}
 	} = 18.0f;
 
@@ -34,17 +28,16 @@ internal class Player
 	public float MouseSensitivity { get; set; } = 0.001f;
 
 	// In tiles per second
-	private const float MAX_WALK_SPEED = 0.8f;
-	private const float MAX_SPRINT_SPEED = 1.2f;
+	private const float MAX_SPEED = 0.8f;
+	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.25f;
 
 	private const float STEP_SIZE = 0.5f;
-
-	private bool _isSprintNow = false;
+	private bool _isSprint = false;
 
 	/// <summary>
 	/// Current speed for display in tiles per sec
 	/// </summary>
-	public float Speed { get; }
+	public float CurrentSpeed { get; }
 
 	/// <summary>
 	/// Value in range -1f..1f
@@ -52,7 +45,8 @@ internal class Player
 	/// <para>0   : Normal</para>
 	/// <para>-1f : Full down</para>
 	/// </summary>
-	public float StepState { get; private set; }
+	public float StepAnimationState { get; private set; }
+	private const float STEP_ANIMATION_SPEED = 0.1f;
 
 	private const float VELOCITY_SATURATION = 1f;
 	private readonly Vector2 _saturationVelocity = new Vector2(VELOCITY_SATURATION, VELOCITY_SATURATION);
@@ -86,12 +80,14 @@ internal class Player
 		Teleport(x, y);
 	}
 
+
+
 	/// <summary>
 	/// Should be called any frame
 	/// </summary>
 	public void Update(TimeSpan deltaTime, GameMap map)
 	{
-		const float STEP_ANIMATION_SPEED = 0.0f;
+# warning Сделать нормально
 		const float WALK_FORWARD_SPEED_FACTOR = 0.02f;
 		const float WALK_STRAFE_SPEED_FACTOR = 0.01f;
 
@@ -119,25 +115,25 @@ internal class Player
 		if (Raylib.IsKeyDown(KeyboardKey.W))
 		{
 			Position += ProcessForMove(Rotate.AsDirection() * WALK_FORWARD_SPEED_FACTOR);
-			StepState += STEP_ANIMATION_SPEED;
+			StepAnimationState += STEP_ANIMATION_SPEED;
 		}
 
 		if (Raylib.IsKeyDown(KeyboardKey.A))
 		{
 			Position += ProcessForMove(-((Rotate + Angle.FromDegrees(90)).AsDirection() * WALK_STRAFE_SPEED_FACTOR));
-			StepState -= STEP_ANIMATION_SPEED / 2;
+			StepAnimationState -= STEP_ANIMATION_SPEED / 2;
 		}
 
 		if (Raylib.IsKeyDown(KeyboardKey.S))
 		{
 			Position += ProcessForMove(-(Rotate.AsDirection() * WALK_FORWARD_SPEED_FACTOR));
-			StepState -= STEP_ANIMATION_SPEED;
+			StepAnimationState -= STEP_ANIMATION_SPEED;
 		}
 
 		if (Raylib.IsKeyDown(KeyboardKey.D))
 		{
 			Position += ProcessForMove((Rotate + Angle.FromDegrees(90)).AsDirection() * WALK_STRAFE_SPEED_FACTOR);
-			StepState += STEP_ANIMATION_SPEED / 2;
+			StepAnimationState += STEP_ANIMATION_SPEED / 2;
 		}
 
 		if (Raylib.IsKeyPressed(KeyboardKey.KpAdd) && ViewDistance < 20)
