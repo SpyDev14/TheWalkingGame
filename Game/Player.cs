@@ -170,7 +170,6 @@ internal class Player
 		return Vector2.Zero;
 	}
 
-	private bool CanMove(Vector2 newPos, GameMap map)
-		=> !map.IsCircleCollided(newPos, COLLISION_RADIUS);
+	private bool CanMove(Vector2 newPos, GameMap map) => !map.IsCircleCollided(newPos, COLLISION_RADIUS);
 	
 }

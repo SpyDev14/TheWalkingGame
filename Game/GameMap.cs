@@ -88,6 +88,8 @@ internal class GameMap
 		}
 	}
 
+	private bool IsOutsideMap()
+
 	public bool IsCollided(int x, int y)
 	{
 		if (x < 0 || x >= Size.Width ||
