@@ -2,7 +2,8 @@
 
 namespace Game.Utils;
 
-internal struct Angle : IFormattable{
+internal struct Angle : IFormattable
+{
 	public static class MathOperations
 	{
 		public static float RadiansToDegrees(float radians) => 180 / MathF.PI * radians;

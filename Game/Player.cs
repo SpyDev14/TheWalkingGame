@@ -4,6 +4,7 @@ using Raylib = Raylib_cs.Raylib;
 using Key = Raylib_cs.KeyboardKey;
 
 using System.Diagnostics;
+using Game.Audio;
 
 internal class Player
 {
@@ -50,16 +51,25 @@ internal class Player
 	/// <para>-1f : Full down</para>
 	/// </summary>
 	public float StepAnimationPhase => MathF.Sin(_stepAnimationPhase * MathF.PI * 2);
-	private float _stepAnimationPhase = 0; // 0..1
+
+	public float _stepAnimationPhase = 0f; // 0..1
 
 	private const float STEP_SIZE = 1f; // tiles in full cycle (-1..1)
 	///<summary>Full cycles per second on full speed</summary>
 	private float StepAnimationSpeed => CurrentMaxSpeed / STEP_SIZE;
 
+	public (float Vertical, float Horizontal) DisplayedStepSizeModifier => _isSprint ? (1.05f, 1.2f) : (1, 1);
+
 	private const float COLLISION_RADIUS = 0.3f; // tiles
 
 	private Vector2 _velocity;
 	private bool _isSprint = false;
+
+	private readonly SoundCollection _footstepSound = new(Enumerable
+		.Range(1, 6)
+		.Select(x => $"Audio/floor{x}.ogg")
+		.Select(x => Path.Join(Program.ResourcesFolder, x))
+	);
 
 	public static Player SpawnAt(Vector2 pos) => new Player() { Position = pos };
 
@@ -121,10 +131,16 @@ internal class Player
 			else _velocity -= _velocity.Normalized() * friction;
 		}
 
-		// Step animation
+		// Step animation & step sound
+		float prevStepAnimationPhase = StepAnimationPhase;
+
 		float speedFactor = Math.Clamp(_velocity.Length() / CurrentMaxSpeed, 0f, 1f);
 		float animDelta = StepAnimationSpeed * speedFactor * dt;
 		_stepAnimationPhase += animDelta;
+
+		if ((StepAnimationPhase > 0 && prevStepAnimationPhase < 0) ||
+			(StepAnimationPhase < 0 && prevStepAnimationPhase > 0))
+			_footstepSound.Play();
 
 		// Move (apply velocity)
 		Position += CalculateCollisionCorrectMoveDelta(_velocity * dt, map);
@@ -137,26 +153,18 @@ internal class Player
 	{
 		// If way is clear, let go
 		// If position is wrong, let escape
-		if (CanMove(Position + previewDelta, map))
+		if (CanMove(Position + previewDelta, map) ||
+			!CanMove(Position, map))
 			return previewDelta;
-			//!CanMove(Position, map))
 
 		Vector2 stepByX = new Vector2(previewDelta.X, 0);
 		Vector2 stepByY = new Vector2(0, previewDelta.Y);
 
-		for (float dx = previewDelta.X; dx > 0.05f; dx -= 0.05f)
-		{
-			if (CanMove(Position + stepByX, map))
-				return stepByX;
-			stepByX.X -= dx;
-		}
+		if (CanMove(Position + stepByX, map))
+			return stepByX;
 
-		for (float dy = previewDelta.Y; dy > 0.05f; dy -= 0.05f)
-		{
-			if (CanMove(Position + stepByY, map))
-				return stepByY;
-			stepByY.Y -= dy;
-		}
+		if (CanMove(Position + stepByY, map))
+			return stepByY;
 
 		// Don't let moving throught walls
 		return Vector2.Zero;
@@ -166,5 +174,11 @@ internal class Player
 	private bool CanMove(Vector2 newPos, GameMap map)
 	{
 		return !map.IsCollided(newPos);
+		return (
+			!map.IsCollided(newPos + new Vector2(1, 0)) &&
+			!map.IsCollided(newPos - new Vector2(1, 1).Normalized()) &&
+			!map.IsCollided(newPos + new Vector2(0, 1)) &&
+			!map.IsCollided(newPos + new Vector2(-1, 1))
+		);
 	}
 }

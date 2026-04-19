@@ -5,7 +5,7 @@ namespace Game;
 
 public class Program
 {
-	readonly static string ResourcesFolder = Path.GetFullPath("../../../../Game/Resources/");
+	public readonly static string ResourcesFolder = Path.GetFullPath("../../../../Game/Resources/");
 	static int RenderWidth { get; set; } = (int)(1920 / 1.5);
 	static int RenderHeight { get; set; } = (int)(1080 / 1.5);
 	static int HorizontPos => RenderHeight / 2;
@@ -86,6 +86,8 @@ public class Program
 
 	public static void Run()
 	{
+		InitAudioDevice();
+
 		InitWindow(RenderWidth, RenderHeight, "The Walking Game");
 		SetWindowIcon(LoadImage(Path.Join(ResourcesFolder, "icon.png")));
 		SetConfigFlags(ConfigFlags.ResizableWindow);
@@ -160,7 +162,9 @@ public class Program
 			{
 				// World
 				{
-					int horizontOffset = (int)(StepSize * (player.StepAnimationPhase));
+					int horizontOffset = (int)(
+						StepSize * (1 + Math.Abs(player.StepAnimationPhase) * player.DisplayedStepSizeModifier.Vertical)
+					);
 
 					// Sky & Floor
 					{
@@ -178,8 +182,11 @@ public class Program
 					for (int i = 0; i < RenderWidth; i++)
 					{
 						Vector2 stepAnimPosOffset = player.CalculateCollisionCorrectMoveDelta(
-							(player.Rotate + Angle.Right).AsDirection() * player.StepAnimationPhase * 0*-0.03f, gameMap
-						);
+							(player.Rotate + Angle.Right).AsDirection()
+							* player.StepAnimationPhase
+							* -0.025f
+							* player.DisplayedStepSizeModifier.Horizontal
+						, gameMap);
 
 						Angle rayAngle = startAngle + rayStep * i;
 						HitInfo info = _raycaster.CastRay(
@@ -280,8 +287,7 @@ public class Program
 					string[] labels = [
 						$"Position: {player.Position:0.##}",
 						$"Rotate: {player.Rotate:0.##}",
-						$"Step state: {player.StepAnimationPhase:0.#}",
-						$"{player.CurrentSpeed:0.###} / {player.CurrentMaxSpeed:0.###}",
+						$"Speed: {player.CurrentSpeed:0.###} / {player.CurrentMaxSpeed:0.###}",
 					];
 
 					for (int i = 0; i < labels.Length; i++)
