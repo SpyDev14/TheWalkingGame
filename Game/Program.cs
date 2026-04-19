@@ -181,12 +181,12 @@ public class Program
 					Angle startAngle = player.Rotate - player.FOV / 2;
 					for (int i = 0; i < RenderWidth; i++)
 					{
-						Vector2 stepAnimPosOffset = player.CalculateCollisionCorrectMoveDelta(
+						Vector2 stepAnimPosOffset = (
 							(player.Rotate + Angle.Right).AsDirection()
 							* player.StepAnimationPhase
-							* -0.025f
+							* -0.0125f
 							* player.DisplayedStepSizeModifier.Horizontal
-						, gameMap);
+						);
 
 						Angle rayAngle = startAngle + rayStep * i;
 						HitInfo info = _raycaster.CastRay(

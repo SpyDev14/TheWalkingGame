@@ -98,4 +98,33 @@ internal class GameMap
 		return CollisionField[idx];
 	}
 	public bool IsCollided(Vector2 pos) => IsCollided((int)pos.X, (int)pos.Y);
+	public bool IsCircleCollided(Vector2 pos, float radius)
+	{
+		// Check rectangle size (points positions)
+		int minX = (int)Math.Clamp(MathF.Floor(pos.X - radius),   0, Size.Width - 1);
+		int maxY = (int)Math.Clamp(MathF.Ceiling(pos.Y + radius), 0, Size.Height - 1);
+		int maxX = (int)Math.Clamp(MathF.Ceiling(pos.X + radius), 0, Size.Width - 1);
+		int minY = (int)Math.Clamp(MathF.Floor(pos.Y - radius),   0, Size.Height - 1);
+
+
+		for (int y = minY; y <= maxY; y++)
+		for (int x = minX; x <= maxX; x++)
+			{
+				if (!IsCollided(x, y)) continue;
+
+				// Closest cell to check
+				float closestX = Math.Clamp(pos.X, x, x + 1);
+				float closestY = Math.Clamp(pos.Y, y, y + 1);
+
+				// for check circle
+				float dx = pos.X - closestX;
+				float dy = pos.Y - closestY;
+				float distanceSquared = (dx * dx) + (dy * dy);
+
+				// Check intersection
+				if (distanceSquared < radius * radius)
+					return true;
+			}
+		return false;
+	}
 }

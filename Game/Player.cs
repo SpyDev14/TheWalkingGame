@@ -60,7 +60,7 @@ internal class Player
 
 	public (float Vertical, float Horizontal) DisplayedStepSizeModifier => _isSprint ? (1.05f, 1.2f) : (1, 1);
 
-	private const float COLLISION_RADIUS = 0.3f; // tiles
+	private const float COLLISION_RADIUS = 0.05f; // tiles
 
 	private Vector2 _velocity;
 	private bool _isSprint = false;
@@ -169,16 +169,8 @@ internal class Player
 		// Don't let moving throught walls
 		return Vector2.Zero;
 	}
-	
-	// NOTE: I think it's may be a part of GameMap
+
 	private bool CanMove(Vector2 newPos, GameMap map)
-	{
-		return !map.IsCollided(newPos);
-		return (
-			!map.IsCollided(newPos + new Vector2(1, 0)) &&
-			!map.IsCollided(newPos - new Vector2(1, 1).Normalized()) &&
-			!map.IsCollided(newPos + new Vector2(0, 1)) &&
-			!map.IsCollided(newPos + new Vector2(-1, 1))
-		);
-	}
+		=> !map.IsCircleCollided(newPos, COLLISION_RADIUS);
+	
 }
