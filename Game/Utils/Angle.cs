@@ -9,14 +9,14 @@ internal struct Angle : IFormattable
 		public static float RadiansToDegrees(float radians) => 180 / MathF.PI * radians;
 		public static float DegreesToRadians(float degrees) => MathF.PI / 180 * degrees;
 
-		public static float NormalizeDegrees(float degrees) => degrees %= 360 switch
+		public static float NormalizeDegrees(float degrees) => (degrees %= 360) switch
 		{
 			< -180 => degrees + 360,
 			> 180 => degrees - 360,
 			_ => degrees
 		};
 
-		public static float NormalizeRadians(float radians) => radians %= (MathF.PI * 2) switch
+		public static float NormalizeRadians(float radians) => (radians %= (MathF.PI * 2)) switch
 		{
 			< -MathF.PI => radians + MathF.PI * 2,
 			> MathF.PI => radians - MathF.PI * 2,
@@ -27,14 +27,13 @@ internal struct Angle : IFormattable
 	private Angle(float radians) => Radians = radians;
 	public Angle() { }
 
-	public static Angle Zero => new Angle(0);
 	/// <summary>90 degrees angle</summary>
 	public static Angle Right => FromDegrees(90);
 
 	public static Angle FromRadians(float radians) => new Angle(radians);
 	public static Angle FromDegrees(float degrees) => new Angle(DegreesToRadians(degrees));
 
-	public float Radians { get; set; }
+	public float Radians { get; set; } = 0;
 	public float Degrees
 	{
 		get => RadiansToDegrees(Radians);
@@ -59,11 +58,11 @@ internal struct Angle : IFormattable
 	);
 
 	public Angle Normalized() => FromRadians(NormalizedRadians);
+	public bool IsNormalized() => Radians == NormalizedRadians;
 
 	public override string ToString() => ToString(null, null);
 	public string ToString(string? format, IFormatProvider? formatProvider)
 		=> $"{Degrees.ToString(format)}° ({Radians.ToString(format)} R)";
-
 
 	public static Angle operator +(Angle a, Angle b) => new Angle(a.Radians + b.Radians);
 	public static Angle operator -(Angle a, Angle b) => new Angle(a.Radians - b.Radians);

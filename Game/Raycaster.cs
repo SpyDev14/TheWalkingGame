@@ -1,6 +1,6 @@
 ﻿namespace Game;
 
-internal enum Direction : byte
+internal enum Direction
 {
 	South,
 	North,

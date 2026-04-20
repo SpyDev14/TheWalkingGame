@@ -19,67 +19,67 @@ public class Program
 	static class Themes
 	{
 		public readonly static Theme MonoLight = new Theme(
-			WallMax: new Color(255, 255, 255),
-			WallMin: new Color(127, 127, 127),
-			FloorMax: new Color(55, 55, 55),
-			FloorMin: new Color(15, 15, 15),
+			WallNear: new Color(255, 255, 255),
+			WallFar: new Color(127, 127, 127),
+			FloorNear: new Color(55, 55, 55),
+			FloorFar: new Color(15, 15, 15),
 			Sky: new Color(0, 0, 0)
 		);
 
 		public readonly static Theme ColoredNight = new Theme(
-			WallMax: MonoLight.WallMax,
-			WallMin: MonoLight.WallMin,
-			FloorMax: MonoLight.FloorMax,
-			FloorMin: MonoLight.FloorMin,
+			WallNear: MonoLight.WallNear,
+			WallFar: MonoLight.WallFar,
+			FloorNear: MonoLight.FloorNear,
+			FloorFar: MonoLight.FloorFar,
 			Sky: MonoLight.Sky,
-#pragma warning disable CS8524 // switch so stupid with enums
 			WallTint: static dir => ColorTint(dir switch
 			{
 				Direction.South => Color.Beige,
 				Direction.North => Color.SkyBlue,
 				Direction.East => Color.Pink,
-				Direction.West => Color.Violet
+				Direction.West or _ => Color.Violet // (Direction)228 - is valid Direction (enum) in C# 😡
 			}, Color.White)
 		);
-#pragma warning restore CS8524
 
 		public readonly static Theme ColoredDay = new Theme(
-			WallMax: ColoredNight.WallMax,
-			WallMin: ColoredNight.WallMin,
-			FloorMax: ColoredNight.FloorMax,
-			FloorMin: ColoredNight.FloorMin,
+			WallNear: ColoredNight.WallNear,
+			WallFar: ColoredNight.WallFar,
+			FloorNear: ColoredNight.FloorNear,
+			FloorFar: ColoredNight.FloorFar,
 			Sky: ColorTint(Color.SkyBlue, Color.White),
-			WallTint: static dir => ColorTint(dir switch
-			{
-				Direction.South => Color.Beige,
-				Direction.North => Color.SkyBlue,
-				Direction.East => Color.Pink,
-				Direction.West => Color.Violet
-			}, Color.White)
+			WallTint: ColoredNight.WallTint
 		);
 
 		public readonly static Theme MonoDark = new Theme(
-			WallMax: new Color(16, 16, 16),
-			WallMin: new Color(0, 0, 0),
-			FloorMax: new Color(16, 16, 16),
-			FloorMin: new Color(0, 0, 0),
+			WallNear: new Color(16, 16, 16),
+			WallFar: new Color(0, 0, 0),
+			FloorNear: new Color(16, 16, 16),
+			FloorFar: new Color(0, 0, 0),
 			Sky: new Color(0, 0, 0)
 		);
 
 		public readonly static Theme Lavaland = new Theme(
-			WallMax: new Color(160, 10, 10),
-			WallMin: new Color(140, 11, 11),
-			FloorMax: new Color(120, 11, 11),
-			FloorMin: new Color(100, 15, 15),
-			Sky: new Color(240, 26, 22)
+			WallNear: new Color(0x60, 0x48, 0x48),
+			WallFar: new Color(60, 47, 47),
+			FloorNear: new Color(56, 46, 46),
+			FloorFar: new Color(35, 30, 30),
+			Sky: new Color(100, 11, 11)
+		);
+
+		public readonly static Theme Backroums = new Theme(
+			WallNear: new Color(172, 165, 53),
+			WallFar: new Color(68, 59, 0),
+			FloorNear: new Color(114, 92, 17),
+			FloorFar: new Color(46, 32, 0),
+			Sky: new Color(154, 143, 64)
 		);
 	}
 
 	readonly record struct Theme(
-		Color WallMax,
-		Color WallMin,
-		Color FloorMax,
-		Color FloorMin,
+		Color WallNear,
+		Color WallFar,
+		Color FloorNear,
+		Color FloorFar,
 		Color Sky,
 		Func<Direction, Color>? WallTint = null
 	);
@@ -95,22 +95,19 @@ public class Program
 
 		SetTargetFPS(TargetFPS);
 
-		Theme theme = Themes.ColoredNight;
+		Theme theme = Themes.Backroums;
 
 		Texture2D mapTexture = LoadTexture(Path.Join(ResourcesFolder, "Map2.png"));
 
 		GameMap gameMap;
 		bool usedPlugMap = false;
-		Vector2 spawnPos;
 		if (!OperatingSystem.IsWindows())
 		{
 			gameMap = GameMap.PlugMap;
-			spawnPos = GameMap.PlugMapSpawnPoint;
 			usedPlugMap = true;
 		}
 		else
-		{
-			// `Bitmap` required Windows (anyway, it's my pet project, nobody except me run this)
+			// `Bitmap` required Windows
 			gameMap = GameMap.FromImage(Resources.Map2, static px =>
 			{
 				if (px.IsColorEquals(Color.White))
@@ -118,19 +115,8 @@ public class Program
 				return GameObject.None;
 			});
 
-			var testSpawnPos = Player.FindSpawnPoint(gameMap, gameMap.PositionInCenter);
-			if (!testSpawnPos.HasValue)
-			{
-				gameMap = GameMap.PlugMap;
-				spawnPos = GameMap.PlugMapSpawnPoint;
-				usedPlugMap = true;
-			}
-			else spawnPos = testSpawnPos.Value;
-		}
+		Player player = Player.SpawnAt(gameMap.SpawnPoint);
 
-		Player player = Player.SpawnAt(spawnPos);
-
-		float planeFactor = 0.1f;
 		bool interfaceEnabled = true;
 		while (!WindowShouldClose())
 		{
@@ -141,29 +127,18 @@ public class Program
 				HideCursor();
 			}
 
-			if (IsKeyDown(KeyboardKey.LeftSuper))
-				planeFactor -= 0.01f;
-			if (IsKeyDown(KeyboardKey.RightSuper))
-				planeFactor += 0.01f;
-
-			if (IsKeyPressed(KeyboardKey.Z))
+			if (IsKeyPressed(KeyboardKey.F2))
 				ToggleFullscreen();
 
 			if (IsKeyPressed(KeyboardKey.F7))
 				interfaceEnabled = !interfaceEnabled;
-
-
-			if (IsKeyDown(KeyboardKey.C))
-				player.FOV -= Angle.FromDegrees(0.2f);
-			if (IsKeyDown(KeyboardKey.X))
-				player.FOV += Angle.FromDegrees(0.2f);
 
 			BeginDrawing();
 			{
 				// World
 				{
 					int horizontOffset = (int)(
-						StepSize * (1 + Math.Abs(player.StepAnimationPhase) * player.DisplayedStepSizeModifier.Vertical)
+						StepSize * (1 + Math.Abs(player.StepAnimationPhase.Vertical) * player.StepVisualSizeModifier.Vertical)
 					);
 
 					// Sky & Floor
@@ -174,23 +149,22 @@ public class Program
 						int floorHeight = RenderHeight + skyY - skyHeight;
 
 						DrawRectangle(0, skyY, RenderWidth, skyHeight, theme.Sky);
-						DrawRectangleGradientV(0, floorY, RenderWidth, floorHeight, theme.FloorMin, theme.FloorMax);
+						DrawRectangleGradientV(0, floorY, RenderWidth, floorHeight, theme.FloorFar, theme.FloorNear);
 					}
 
 					Angle rayStep = player.FOV / RenderWidth;
 					Angle startAngle = player.Rotate - player.FOV / 2;
+					Vector2 horizontalRenderingOffset = (
+						(player.Rotate + Angle.Right).AsDirection()
+						* player.StepAnimationPhase.Vertical
+						* -0.0125f
+						* player.StepVisualSizeModifier.Horizontal
+					);
 					for (int i = 0; i < RenderWidth; i++)
 					{
-						Vector2 stepAnimPosOffset = (
-							(player.Rotate + Angle.Right).AsDirection()
-							* player.StepAnimationPhase
-							* -0.0125f
-							* player.DisplayedStepSizeModifier.Horizontal
-						);
-
 						Angle rayAngle = startAngle + rayStep * i;
 						HitInfo info = _raycaster.CastRay(
-							player.Position + stepAnimPosOffset,
+							player.Position + horizontalRenderingOffset,
 							rayAngle,
 							gameMap.IsCollided,
 							player.ViewDistance
@@ -203,12 +177,13 @@ public class Program
 						float distance = info.Distance * MathF.Cos(angleFromCenter.Radians);
 
 						float t = 1 - distance / player.ViewDistance;
-						float planeDistance = planeFactor * RenderHeight / MathF.Tan(player.FOV.Radians * planeFactor);
+						float planeDistance = (RenderWidth / 2) / MathF.Tan(player.FOV.Radians / 2);
 						int wallHeight = (int)(planeDistance / distance);
 
-						int topMargin = (RenderHeight - wallHeight) / 2 + (horizontOffset * (1 - (wallHeight / RenderHeight)));
+						float wallHeightRatio = wallHeight / RenderHeight;
+						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(horizontOffset * (1 - wallHeightRatio));
 
-						Color color = Color.Lerp(theme.WallMin, theme.WallMax, t);
+						Color color = ColorLerp(theme.WallFar, theme.WallNear, t);
 						if (theme.WallTint is not null)
 							color = ColorTint(color, theme.WallTint(info.Direction));
 
@@ -216,7 +191,8 @@ public class Program
 							continue;
 
 						const float SHADE_TOP_ALPHA = 0.08f;
-						const float SHADE_BOTTOM_ALPHA = SHADE_TOP_ALPHA / 4 * 0;
+						const float SHADE_BOTTOM_ALPHA = 0;
+
 						Color shadeTopColor = ColorAlpha(color, SHADE_TOP_ALPHA);
 						Color shadeBottomColor = ColorAlpha(color, SHADE_BOTTOM_ALPHA);
 
@@ -228,20 +204,20 @@ public class Program
 				// UI
 				var drawInterface = () => {
 					// Cross
-					int CenterPos = RenderWidth / 2;
+					int centerPos = RenderWidth / 2;
 					const int CROSS_SIZE = 16;
 					const int CROSS_WIDTH = 2;
 					Color crossColor = ColorAlpha(Color.White, 0.5f);
 
 					DrawRectangle(
-						CenterPos - CROSS_SIZE / 2,
+						centerPos - CROSS_SIZE / 2,
 						HorizontPos - CROSS_WIDTH / 2,
 						CROSS_SIZE,
 						CROSS_WIDTH,
 						crossColor
 					);
 					DrawRectangle(
-						CenterPos - CROSS_WIDTH / 2,
+						centerPos - CROSS_WIDTH / 2,
 						HorizontPos - CROSS_SIZE / 2,
 						CROSS_WIDTH,
 						CROSS_SIZE,
@@ -278,7 +254,12 @@ public class Program
 							playerPointRadius,
 							Color.Red
 						);
-						DrawRectanglePro(new Rectangle(playerPointX, playerPointY, playerPointRadius * 2, 2), new(0, 0), player.Rotate.Degrees, Color.Red);
+						DrawRectanglePro(
+							new Rectangle(playerPointX, playerPointY, playerPointRadius * 2, 2),
+							new(0, 0),
+							player.Rotate.Degrees,
+							Color.Red
+						);
 					};
 					if (!usedPlugMap) drawMap();
 

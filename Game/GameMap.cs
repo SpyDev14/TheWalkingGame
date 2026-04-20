@@ -1,22 +1,37 @@
-﻿using System.Runtime.Versioning;
+﻿using Raylib_cs;
+using System.Runtime.Versioning;
 
 namespace Game;
 enum GameObject : byte
 {
 	None,
 	Wall,
+	SpawnPoint,
 }
 
 internal class GameMap
 {
 	public readonly Size Size;
-	public Vector2 PositionInCenter => new Vector2(Size.Width / 2, Size.Height / 2);
 	public ImmutableArray<bool> CollisionField { get; }
+	public Texture2D TextureForRender { get; }
+
+	public Vector2 SpawnPoint => new Vector2(_spawnCell.x, _spawnCell.y) + new Vector2(0.5f);
+	private (int x, int y) _spawnCell;
 
 	public GameMap(GameObject[] field, Size size)
 	{
 		Size = size;
 		CollisionField = field.Select(x => x == GameObject.Wall).ToImmutableArray();
+
+		_spawnCell = (size.Width / 2, size.Height / 2);
+		
+
+		for (int y = 0; y < Size.Height; y++)
+			for (int x = 0; x < Size.Width; x++)
+				if (field[y*size.Width+x] == GameObject.SpawnPoint)
+					_spawnCell = (x, y);
+
+
 	}
 
 	public static GameMap FromBlueprint(
@@ -53,47 +68,32 @@ internal class GameMap
 		return new GameMap(field, new(width, height));
 	}
 
-	private const char PLUG_MAP_SPAWNPOINT_CHAR = 'x';
-	private static readonly string[] _plugBlueprint = [
-		"              ##",
-		"               #",
-		"  #####         ",
-		"  #   #         ",
-		"  # x #         ",
-		"  #   #         ",
-		"  ## ##         ",
-		"                ",
-		"                ",
-	];
-	public static GameMap PlugMap => FromBlueprint(
-		_plugBlueprint,
+	public static GameMap PlugMap => FromBlueprint([
+			"              ##",
+			"               #",
+			"  #####         ",
+			"  #   #         ",
+			"  # x #         ",
+			"  #   #         ",
+			"  ## ##         ",
+			"                ",
+			"                ",
+		],
 		cell => cell switch {
 			'#' => GameObject.Wall,
+			'x' => GameObject.SpawnPoint,
 			_ => GameObject.None
 		}
 	);
 
-	public static Vector2 PlugMapSpawnPoint
-	{
-		get
-		{
-			for (int y = 0; y < _plugBlueprint.Length; y++)
-			{
-				string line = _plugBlueprint[y];
-				for (int x = 0; x < line.Length; x++)
-					if (_plugBlueprint[y][x] == PLUG_MAP_SPAWNPOINT_CHAR)
-						return new Vector2(x, y);
-			}
-			return new Vector2(0, 0);
-		}
-	}
-
+	// Collision check's
+	private bool IsOutsideMap(Vector2 pos) => IsOutsideMap((int)pos.X, (int)pos.Y);
 	private bool IsOutsideMap(int x, int y) => (
 		x < 0 || x >= Size.Width ||
 		y < 0 || y >= Size.Height
 	);
-	private bool IsOutsideMap(Vector2 pos) => IsOutsideMap((int)pos.X, (int)pos.Y);
 
+	public bool IsCollided(Vector2 pos) => IsCollided((int)pos.X, (int)pos.Y);
 	public bool IsCollided(int x, int y)
 	{
 		if (IsOutsideMap(x, y)) return true;
@@ -101,7 +101,7 @@ internal class GameMap
 		int idx = y * Size.Width + x;
 		return CollisionField[idx];
 	}
-	public bool IsCollided(Vector2 pos) => IsCollided((int)pos.X, (int)pos.Y);
+
 	public bool IsCircleCollided(Vector2 pos, float radius)
 	{
 		if (IsOutsideMap(pos + new Vector2(radius)) ||

@@ -1,41 +1,36 @@
 ﻿namespace Game;
 
-using Raylib = Raylib_cs.Raylib;
-using Key = Raylib_cs.KeyboardKey;
-
-using System.Diagnostics;
+using Game.Arhive;
 using Game.Audio;
+using Raylib_cs;
+using System.Diagnostics;
+using Key = Raylib_cs.KeyboardKey;
+using Raylib = Raylib_cs.Raylib;
 
 internal class Player
 {
 	/// <summary>Radians per pixel</summary>
-	public float MouseSensitivity { get; set; } = 0.001f;
+	private float MouseSensitivity { get; set; } = 0.001f;
 
-	public Angle FOV {
-		get; set {
-			if (value.Degrees > 5) field = value;
-			else Debug.Write($"WARN {nameof(FOV)}.set: cannot be < 5, ignore set.");
-		}
-	} = Angle.FromDegrees(85);
+	private const float ZOOM_SCALE = 0.5f;
+	private bool _isZoom = false;
 
-	public float ViewDistance {
-		get; set {
-			if (value > 0) field = value;
-			else Debug.Write($"WARN {nameof(ViewDistance)}.set: cannot be < 5, ignore set.");
-		}
-	} = 18.0f;
+	private Angle _fov = Angle.FromDegrees(85);
+	public Angle FOV => _fov * (_isZoom ? ZOOM_SCALE : 1);
+
+	public float ViewDistance { get; private set; } = 18.0f;
 
 	private Angle _rotate = default;
 	public Angle Rotate => _rotate;
 	public Vector2 Position { get; private set; }
 
 
-	// ==== [ Movenment ] ===
+	// ==== [ Movenment ] ====
 	/// <summary>Current speed for display in tiles per sec</summary>
 	public float CurrentSpeed => _velocity.Length();
 	public float CurrentMaxSpeed => _isSprint ? MAX_SPRINT_SPEED : MAX_SPEED;
 
-	private const float MAX_SPEED = 0.8f; // tiles / second
+	private const float MAX_SPEED = 1.2f; // tiles / second
 	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.5f;
 
 	///<summary>tiles / sec for get full speed</summary>
@@ -44,21 +39,21 @@ internal class Player
 	private const float FRICTION = 2.0f;
 
 	// Step animation
-	/// <summary>
-	/// Value in range -1f..1f
-	/// <para>1f  : Full top</para>
-	/// <para>0   : Normal</para>
-	/// <para>-1f : Full down</para>
-	/// </summary>
-	public float StepAnimationPhase => MathF.Sin(_stepAnimationPhase * MathF.PI * 2);
+	public float StepSize => _isSprint ? 1.2f : 1f; // tiles for full cycle
+	public (float Vertical, float Horizontal) StepVisualSizeModifier => _isSprint ? (1.05f, 1.1f) : (1, 1);
 
-	public float _stepAnimationPhase = 0f; // 0..1
-
-	private const float STEP_SIZE = 1f; // tiles in full cycle (-1..1)
 	///<summary>Full cycles per second on full speed</summary>
-	private float StepAnimationSpeed => CurrentMaxSpeed / STEP_SIZE;
+	private float StepAnimationSpeed => CurrentMaxSpeed / StepSize;
 
-	public (float Vertical, float Horizontal) DisplayedStepSizeModifier => _isSprint ? (1.05f, 1.2f) : (1, 1);
+	public float _stepPhase = 0f; // 0..1
+	/// <summary>in range -1f..1f where 1 - full top, -1 - full down</summary>
+
+	public (float Vertical, float Horizontal) StepAnimationPhase => (
+		MathF.Sin(_stepPhase * MathF.PI * 2),
+		-MathF.Sin(_stepPhase * MathF.PI * 2)
+	);
+	public float StepPhase => MathF.Sin(_stepPhase * MathF.PI * 2);
+
 
 	private const float COLLISION_RADIUS = 0.15f; // tiles
 
@@ -72,12 +67,6 @@ internal class Player
 	);
 
 	public static Player SpawnAt(Vector2 pos) => new Player() { Position = pos };
-
-# warning remove and add spawn point pos to GameMap
-	public static Vector2? FindSpawnPoint(GameMap map, Vector2 pos)
-	{
-		return pos;
-	}
 
 	/// <summary>
 	/// Should be called any frame
@@ -96,18 +85,21 @@ internal class Player
 		 *    Player(ILevelManaer levelMan) {...} // Here
 		 *    new Player(levelManager) // In Main
 		 */
+		static bool IsKeyDown(Key key) => Raylib.IsKeyDown(key);
+
 		const float MAX_DELTA = 0.033f;
 		float dt = MathF.Min((float)deltaTime.TotalSeconds, MAX_DELTA);
 
 		float forward = 0;
 		float strafe = 0;
 		
-		if (Raylib.IsKeyDown(Key.W)) forward += 1f;
-		if (Raylib.IsKeyDown(Key.S)) forward -= 1f;
-		if (Raylib.IsKeyDown(Key.D)) strafe += 1f;
-		if (Raylib.IsKeyDown(Key.A)) strafe -= 1f;
+		if (IsKeyDown(Key.W)) forward += 1f;
+		if (IsKeyDown(Key.S)) forward -= 1f;
+		if (IsKeyDown(Key.D)) strafe += 1f;
+		if (IsKeyDown(Key.A)) strafe -= 1f;
 
-		_isSprint = Raylib.IsKeyDown(Key.LeftShift);
+		_isSprint = IsKeyDown(Key.LeftShift);
+		_isZoom = IsKeyDown(Key.C);
 
 		Vector2 inputDirection = new(strafe, forward);
 		if (!inputDirection.IsZero())
@@ -130,26 +122,27 @@ internal class Player
 
 			else _velocity -= _velocity.Normalized() * friction;
 		}
+		// Move (apply velocity)
+		Vector2 moveDelta = CalcCollisionAdjustedDelta(_velocity * dt, map);
+		Position += moveDelta;
 
 		// Step animation & step sound
-		float prevStepAnimationPhase = StepAnimationPhase;
+		float prevStepPhase = StepPhase;
 
 		float speedFactor = Math.Clamp(_velocity.Length() / CurrentMaxSpeed, 0f, 1f);
 		float animDelta = StepAnimationSpeed * speedFactor * dt;
-		_stepAnimationPhase += animDelta;
+		_stepPhase += animDelta;
 
-		if ((StepAnimationPhase > 0 && prevStepAnimationPhase < 0) ||
-			(StepAnimationPhase < 0 && prevStepAnimationPhase > 0))
+		if ((StepPhase > 0 && prevStepPhase < 0) ||
+			(StepPhase < 0 && prevStepPhase > 0))
 			_footstepSound.Play();
-
-		// Move (apply velocity)
-		Position += CalculateCollisionCorrectMoveDelta(_velocity * dt, map);
 
 		// Mouse
 		_rotate.NormalizedRadians += Raylib.GetMouseDelta().X * MouseSensitivity;
+		_rotate = _rotate.Normalized();
 	}
-# warning Rename it
-	public Vector2 CalculateCollisionCorrectMoveDelta(Vector2 delta, GameMap map)
+
+	private Vector2 CalcCollisionAdjustedDelta(Vector2 delta, GameMap map)
 	{
 		// If way is clear, let's go
 		// If position is wrong, let escape
@@ -171,5 +164,4 @@ internal class Player
 	}
 
 	private bool CanMove(Vector2 delta, GameMap map) => !map.IsCircleCollided(Position + delta, COLLISION_RADIUS);
-	
 }
