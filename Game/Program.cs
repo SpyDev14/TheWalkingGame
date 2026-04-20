@@ -206,7 +206,7 @@ public class Program
 						float planeDistance = planeFactor * RenderHeight / MathF.Tan(player.FOV.Radians * planeFactor);
 						int wallHeight = (int)(planeDistance / distance);
 
-						int topMargin = (RenderHeight - wallHeight) / 2 + horizontOffset;
+						int topMargin = (RenderHeight - wallHeight) / 2 + (horizontOffset * (1 - (wallHeight / RenderHeight)));
 
 						Color color = Color.Lerp(theme.WallMin, theme.WallMax, t);
 						if (theme.WallTint is not null)

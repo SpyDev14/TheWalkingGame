@@ -88,13 +88,15 @@ internal class GameMap
 		}
 	}
 
-	private bool IsOutsideMap()
+	private bool IsOutsideMap(int x, int y) => (
+		x < 0 || x >= Size.Width ||
+		y < 0 || y >= Size.Height
+	);
+	private bool IsOutsideMap(Vector2 pos) => IsOutsideMap((int)pos.X, (int)pos.Y);
 
 	public bool IsCollided(int x, int y)
 	{
-		if (x < 0 || x >= Size.Width ||
-			y < 0 || y >= Size.Height)
-			return true;
+		if (IsOutsideMap(x, y)) return true;
 
 		int idx = y * Size.Width + x;
 		return CollisionField[idx];
@@ -102,11 +104,15 @@ internal class GameMap
 	public bool IsCollided(Vector2 pos) => IsCollided((int)pos.X, (int)pos.Y);
 	public bool IsCircleCollided(Vector2 pos, float radius)
 	{
+		if (IsOutsideMap(pos + new Vector2(radius)) ||
+			IsOutsideMap(pos - new Vector2(radius)))
+			return true;
+
 		// Check rectangle size (points positions)
-		int minX = (int)Math.Clamp(MathF.Floor(pos.X - radius),   0, Size.Width - 1);
-		int maxY = (int)Math.Clamp(MathF.Ceiling(pos.Y + radius), 0, Size.Height - 1);
-		int maxX = (int)Math.Clamp(MathF.Ceiling(pos.X + radius), 0, Size.Width - 1);
-		int minY = (int)Math.Clamp(MathF.Floor(pos.Y - radius),   0, Size.Height - 1);
+		int minX = (int)MathF.Floor(pos.X - radius);
+		int maxY = (int)MathF.Ceiling(pos.Y + radius);
+		int maxX = (int)MathF.Ceiling(pos.X + radius);
+		int minY = (int)MathF.Floor(pos.Y - radius);
 
 
 		for (int y = minY; y <= maxY; y++)

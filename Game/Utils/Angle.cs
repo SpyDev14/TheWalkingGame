@@ -70,7 +70,4 @@ internal struct Angle : IFormattable
 	public static Angle operator *(Angle a, float mul) => new Angle(a.Radians * mul);
 	public static Angle operator /(Angle a, float dividor) => new Angle(a.Radians / dividor);
 	public static Angle operator %(Angle a, float dividor) => new Angle(a.Radians % dividor);
-
-	public static bool operator >(Angle a, Angle b) => a.Radians > b.Radians;
-	public static bool operator <(Angle a, Angle b) => a.Radians < b.Radians;
 }

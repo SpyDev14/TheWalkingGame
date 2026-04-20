@@ -60,7 +60,7 @@ internal class Player
 
 	public (float Vertical, float Horizontal) DisplayedStepSizeModifier => _isSprint ? (1.05f, 1.2f) : (1, 1);
 
-	private const float COLLISION_RADIUS = 0.05f; // tiles
+	private const float COLLISION_RADIUS = 0.15f; // tiles
 
 	private Vector2 _velocity;
 	private bool _isSprint = false;
@@ -146,30 +146,30 @@ internal class Player
 		Position += CalculateCollisionCorrectMoveDelta(_velocity * dt, map);
 
 		// Mouse
-		_rotate.Radians += Raylib.GetMouseDelta().X * MouseSensitivity;
+		_rotate.NormalizedRadians += Raylib.GetMouseDelta().X * MouseSensitivity;
 	}
 # warning Rename it
-	public Vector2 CalculateCollisionCorrectMoveDelta(Vector2 previewDelta, GameMap map)
+	public Vector2 CalculateCollisionCorrectMoveDelta(Vector2 delta, GameMap map)
 	{
-		// If way is clear, let go
+		// If way is clear, let's go
 		// If position is wrong, let escape
-		if (CanMove(Position + previewDelta, map) ||
-			!CanMove(Position, map))
-			return previewDelta;
+		if (CanMove(delta, map) ||
+			!CanMove(new(), map))
+			return delta;
 
-		Vector2 stepByX = new Vector2(previewDelta.X, 0);
-		Vector2 stepByY = new Vector2(0, previewDelta.Y);
+		Vector2 stepByX = new Vector2(delta.X, 0);
+		Vector2 stepByY = new Vector2(0, delta.Y);
 
-		if (CanMove(Position + stepByX, map))
+		if (CanMove(stepByX, map))
 			return stepByX;
 
-		if (CanMove(Position + stepByY, map))
+		if (CanMove(stepByY, map))
 			return stepByY;
 
 		// Don't let moving throught walls
 		return Vector2.Zero;
 	}
 
-	private bool CanMove(Vector2 newPos, GameMap map) => !map.IsCircleCollided(newPos, COLLISION_RADIUS);
+	private bool CanMove(Vector2 delta, GameMap map) => !map.IsCircleCollided(Position + delta, COLLISION_RADIUS);
 	
 }
