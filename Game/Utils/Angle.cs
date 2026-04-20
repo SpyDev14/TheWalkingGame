@@ -9,8 +9,19 @@ internal struct Angle : IFormattable
 		public static float RadiansToDegrees(float radians) => 180 / MathF.PI * radians;
 		public static float DegreesToRadians(float degrees) => MathF.PI / 180 * degrees;
 
-		public static float NormalizeDegrees(float degrees) => degrees % (180 * MathF.Sign(degrees));
-		public static float NormalizeRadians(float radians) => radians % (MathF.PI * MathF.Sign(radians));
+		public static float NormalizeDegrees(float degrees) => degrees %= 360 switch
+		{
+			< -180 => degrees + 360,
+			> 180 => degrees - 360,
+			_ => degrees
+		};
+
+		public static float NormalizeRadians(float radians) => radians %= (MathF.PI * 2) switch
+		{
+			< -MathF.PI => radians + MathF.PI * 2,
+			> MathF.PI => radians - MathF.PI * 2,
+			_ => radians
+		};
 	}
 
 	private Angle(float radians) => Radians = radians;
