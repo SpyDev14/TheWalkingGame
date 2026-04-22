@@ -95,9 +95,10 @@ public class Program
 
 		SetTargetFPS(TargetFPS);
 
-		Theme theme = Themes.Backroums;
+		Theme theme = Themes.ColoredNight;
 
-		Texture2D mapTexture = LoadTexture(Path.Join(ResourcesFolder, "Map2.png"));
+		string mapPath = Path.Join(ResourcesFolder, "Map.png");
+		Texture2D mapTexture = LoadTexture(mapPath);
 
 		GameMap gameMap;
 		bool usedPlugMap = false;
@@ -108,12 +109,15 @@ public class Program
 		}
 		else
 			// `Bitmap` required Windows
-			gameMap = GameMap.FromImage(Resources.Map2, static px =>
+			gameMap = GameMap.FromImage(new Bitmap(mapPath), static px =>
 			{
 				if (px.IsColorEquals(Color.White))
 					return GameObject.Wall;
+				if (px.IsColorEquals(new Color(255, 0, 0)))
+					return GameObject.SpawnPoint;
 				return GameObject.None;
 			});
+		gameMap.IsOutsideSolid = false;
 
 		Player player = Player.SpawnAt(gameMap.SpawnPoint);
 
@@ -138,7 +142,7 @@ public class Program
 				// World
 				{
 					int horizontOffset = (int)(
-						StepSize * (1 + Math.Abs(player.StepAnimationPhase.Vertical) * player.StepVisualSizeModifier.Vertical)
+						StepSize * (1 + Math.Abs(player.StepPhase) * player.StepVisualSizeModifier.Vertical)
 					);
 
 					// Sky & Floor
@@ -156,13 +160,15 @@ public class Program
 					Angle startAngle = player.Rotate - player.FOV / 2;
 					Vector2 horizontalRenderingOffset = (
 						(player.Rotate + Angle.Right).AsDirection()
-						* player.StepAnimationPhase.Vertical
+						* player.StepPhase
 						* -0.0125f
 						* player.StepVisualSizeModifier.Horizontal
 					);
 					for (int i = 0; i < RenderWidth; i++)
 					{
 						Angle rayAngle = startAngle + rayStep * i;
+						Angle angleFromCenter = rayAngle - player.Rotate;
+
 						HitInfo info = _raycaster.CastRay(
 							player.Position + horizontalRenderingOffset,
 							rayAngle,
@@ -173,12 +179,11 @@ public class Program
 						if (info.Distance == -1)
 							continue;
 
-						Angle angleFromCenter = rayAngle - player.Rotate;
 						float distance = info.Distance * MathF.Cos(angleFromCenter.Radians);
 
 						float t = 1 - distance / player.ViewDistance;
 						float planeDistance = (RenderWidth / 2) / MathF.Tan(player.FOV.Radians / 2);
-						int wallHeight = (int)(planeDistance / distance);
+						int wallHeight = (int)(planeDistance / distance * Constants.TILES_PER_METER);
 
 						float wallHeightRatio = wallHeight / RenderHeight;
 						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(horizontOffset * (1 - wallHeightRatio));
@@ -269,6 +274,7 @@ public class Program
 						$"Position: {player.Position:0.##}",
 						$"Rotate: {player.Rotate:0.##}",
 						$"Speed: {player.CurrentSpeed:0.###} / {player.CurrentMaxSpeed:0.###}",
+						$"FOV: {player.FOV:0.##}",
 					];
 
 					for (int i = 0; i < labels.Length; i++)

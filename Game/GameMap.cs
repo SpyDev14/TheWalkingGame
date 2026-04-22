@@ -14,6 +14,7 @@ internal class GameMap
 	public readonly Size Size;
 	public ImmutableArray<bool> CollisionField { get; }
 	public Texture2D TextureForRender { get; }
+	public bool IsOutsideSolid { get; set; }
 
 	public Vector2 SpawnPoint => new Vector2(_spawnCell.x, _spawnCell.y) + new Vector2(0.5f);
 	private (int x, int y) _spawnCell;
@@ -87,8 +88,8 @@ internal class GameMap
 	);
 
 	// Collision check's
-	private bool IsOutsideMap(Vector2 pos) => IsOutsideMap((int)pos.X, (int)pos.Y);
-	private bool IsOutsideMap(int x, int y) => (
+	public bool IsOutsideMap(Vector2 pos) => IsOutsideMap((int)pos.X, (int)pos.Y);
+	public bool IsOutsideMap(int x, int y) => (
 		x < 0 || x >= Size.Width ||
 		y < 0 || y >= Size.Height
 	);
@@ -96,7 +97,8 @@ internal class GameMap
 	public bool IsCollided(Vector2 pos) => IsCollided((int)pos.X, (int)pos.Y);
 	public bool IsCollided(int x, int y)
 	{
-		if (IsOutsideMap(x, y)) return true;
+		if (IsOutsideMap(x, y))
+			return IsOutsideSolid;
 
 		int idx = y * Size.Width + x;
 		return CollisionField[idx];
@@ -106,7 +108,7 @@ internal class GameMap
 	{
 		if (IsOutsideMap(pos + new Vector2(radius)) ||
 			IsOutsideMap(pos - new Vector2(radius)))
-			return true;
+			return IsOutsideSolid;
 
 		// Check rectangle size (points positions)
 		int minX = (int)MathF.Floor(pos.X - radius);

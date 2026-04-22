@@ -1,11 +1,8 @@
-﻿namespace Game;
-
-using Game.Arhive;
-using Game.Audio;
-using Raylib_cs;
-using System.Diagnostics;
+﻿using Game.Audio;
 using Key = Raylib_cs.KeyboardKey;
 using Raylib = Raylib_cs.Raylib;
+
+namespace Game;
 
 internal class Player
 {
@@ -18,45 +15,48 @@ internal class Player
 	private Angle _fov = Angle.FromDegrees(85);
 	public Angle FOV => _fov * (_isZoom ? ZOOM_SCALE : 1);
 
-	public float ViewDistance { get; private set; } = 18.0f;
+	/// <summary>In tiles</summary>
+	public float ViewDistance { get; private set; } = 12.0f * Constants.TILES_PER_METER;
 
 	private Angle _rotate = default;
 	public Angle Rotate => _rotate;
+	/// <summary>Position in map coords (tiles)</summary>
 	public Vector2 Position { get; private set; }
 
 
 	// ==== [ Movenment ] ====
-	/// <summary>Current speed for display in tiles per sec</summary>
+	/// <summary>Current speed in meters per sec</summary>
 	public float CurrentSpeed => _velocity.Length();
+	/// <summary>Current max speed in meters per sec</summary>
 	public float CurrentMaxSpeed => _isSprint ? MAX_SPRINT_SPEED : MAX_SPEED;
 
-	private const float MAX_SPEED = 1.2f; // tiles / second
+	///<summary>m / sec</summary>
+	private const float MAX_SPEED = 1.2f;
 	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.5f;
 
-	///<summary>tiles / sec for get full speed</summary>
+	///<summary>m / sec for get full speed</summary>
 	private const float ACCELERATION = 8.0f;
-	/// <summary>tiles / sec for full stop after lost control</summary>
+	/// <summary>m / sec for full stop after lost control</summary>
 	private const float FRICTION = 2.0f;
 
 	// Step animation
-	public float StepSize => _isSprint ? 1.2f : 1f; // tiles for full cycle
+	/// <summary>meters for full cycle</summary>
+	public float StepSize => _isSprint ? 1.2f : 1f;
+	/// <summary>In ratio</summary>
 	public (float Vertical, float Horizontal) StepVisualSizeModifier => _isSprint ? (1.05f, 1.1f) : (1, 1);
 
 	///<summary>Full cycles per second on full speed</summary>
 	private float StepAnimationSpeed => CurrentMaxSpeed / StepSize;
 
 	public float _stepPhase = 0f; // 0..1
-	/// <summary>in range -1f..1f where 1 - full top, -1 - full down</summary>
 
-	public (float Vertical, float Horizontal) StepAnimationPhase => (
-		MathF.Sin(_stepPhase * MathF.PI * 2),
-		-MathF.Sin(_stepPhase * MathF.PI * 2)
-	);
+	/// <summary>Value in range -1f..1f where 1 - full top, -1 - full down</summary>
 	public float StepPhase => MathF.Sin(_stepPhase * MathF.PI * 2);
 
+	/// <summary>Radius of player circle-shape in meters</summary>
+	private const float COLLISION_RADIUS = 0.15f;
 
-	private const float COLLISION_RADIUS = 0.15f; // tiles
-
+	/// <summary>In meters</summary>
 	private Vector2 _velocity;
 	private bool _isSprint = false;
 
@@ -97,6 +97,7 @@ internal class Player
 		if (IsKeyDown(Key.S)) forward -= 1f;
 		if (IsKeyDown(Key.D)) strafe += 1f;
 		if (IsKeyDown(Key.A)) strafe -= 1f;
+		if (IsKeyDown(Key.F)) _fov.Degrees += -Raylib.GetMouseWheelMove() * 1.2f;
 
 		_isSprint = IsKeyDown(Key.LeftShift);
 		_isZoom = IsKeyDown(Key.C);
@@ -118,12 +119,13 @@ internal class Player
 			// No input, apply friction if has velocity
 			float friction = FRICTION * dt;
 			if (_velocity.Length() <= friction)
-				_velocity = Vector2.Zero; // memcp faster than checks
+				_velocity = Vector2.Zero;
 
 			else _velocity -= _velocity.Normalized() * friction;
+			
 		}
 		// Move (apply velocity)
-		Vector2 moveDelta = CalcCollisionAdjustedDelta(_velocity * dt, map);
+		Vector2 moveDelta = CalcCollisionAdjustedDelta(_velocity * dt * Constants.TILES_PER_METER, map);
 		Position += moveDelta;
 
 		// Step animation & step sound
@@ -163,5 +165,7 @@ internal class Player
 		return Vector2.Zero;
 	}
 
-	private bool CanMove(Vector2 delta, GameMap map) => !map.IsCircleCollided(Position + delta, COLLISION_RADIUS);
+	private bool CanMove(Vector2 delta, GameMap map) => !map.IsCircleCollided(
+		Position + delta, COLLISION_RADIUS * Constants.TILES_PER_METER
+	);
 }

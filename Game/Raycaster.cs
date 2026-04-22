@@ -1,6 +1,6 @@
 ﻿namespace Game;
 
-internal enum Direction
+internal enum Direction : byte
 {
 	South,
 	North,
@@ -8,11 +8,25 @@ internal enum Direction
 	West,
 }
 
-internal readonly record struct HitInfo(float Distance, Direction Direction, (int x, int y) Cell);
+internal readonly record struct HitInfo(float Distance, Direction Direction, (int x, int y) CellPos);
 internal class Raycaster
 {
-	public HitInfo CastRay(Vector2 pos, Angle angle, Func<int, int, bool> isWall, float maxDistance)
+	/// <summary>
+	/// Return <see cref="HitInfo"/> with length of thrown ray (distance to first hitable object).
+	/// </summary>
+	/// <param name="pos">Start position</param>
+	/// <param name="angle">Angle rotate at position</param>
+	/// <param name="isHit">Check for stop ray cast (x, y => bool).</param>
+	/// <param name="maxDistance">Max ray distance. Returns -1 if walked distance greater than <paramref name="maxDistance"/>.
+	/// Set -1 to <paramref name="maxDistance"/> for disable max distance.</param>
+	/// <returns><see cref="HitInfo"/> with <see cref="HitInfo.Distance"/> to first hitable object
+	/// or -1 if distance greater than <paramref name="maxDistance"/>.</returns>
+	/// <exception cref="ArgumentOutOfRangeException"></exception>
+	public HitInfo CastRay(Vector2 pos, Angle angle, Func<int, int, bool> isHit, float maxDistance)
 	{
+		if (maxDistance < 0 && maxDistance != -1)
+			throw new ArgumentOutOfRangeException(nameof(maxDistance));
+
 		Vector2 direction = angle.AsDirection();
 
 		int mapX = (int)pos.X;
@@ -67,10 +81,10 @@ internal class Raycaster
 				? distanceToSideX - distanceDeltaX
 				: distanceToSideY - distanceDeltaY;
 
-			if (isWall(mapX, mapY))
+			if (isHit(mapX, mapY))
 				break;
 
-			if (distance > maxDistance)
+			if (distance > maxDistance && maxDistance != -1)
 				return new HitInfo(-1, side, (mapX, mapY));
 		}
 
