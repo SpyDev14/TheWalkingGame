@@ -6,99 +6,59 @@ namespace Game;
 
 public class Program
 {
-	public readonly static string ResourcesFolder = Path.GetFullPath("../../../../Game/Resources/");
-	static int RenderWidth { get; set; } = (int)(1920 / 1.5);
-	static int RenderHeight { get; set; } = (int)(1080 / 1.5);
-	static int HorizontPos => RenderHeight / 2;
+	int _renderWidth;
+	int _renderHeight;
+	int RenderWidth { get => _renderWidth; set => SetWindowSize(_renderWidth = value, RenderHeight); }
+	int RenderHeight { get => _renderHeight; set => SetWindowSize(RenderWidth, _renderHeight = value); }
 
-	static readonly int StepSize = RenderHeight / 80;
+	int HorizontPos => RenderHeight / 2;
 
-	static int DisplayedMapSize => RenderHeight / 5;
-	static int TargetFPS => 60;
-	readonly static Raycaster _raycaster = new();
+	int StepSize => RenderHeight / 80;
 
-	static class Themes
+	int RenderMapHeight => RenderHeight / 5;
+	int TargetFPS { get; set => SetTargetFPS(field = value); }
+	bool VSyncEnabled
 	{
-		public readonly static Theme MonoLight = new Theme(
-			WallNear: new Color(255, 255, 255),
-			WallFar: new Color(127, 127, 127),
-			FloorNear: new Color(55, 55, 55),
-			FloorFar: new Color(15, 15, 15),
-			Sky: new Color(0, 0, 0)
-		);
+		get;
+		set
+		{
+			if      (!value && field) ClearWindowState(ConfigFlags.VSyncHint);
+			else if (value && !field) SetConfigFlags(ConfigFlags.VSyncHint);
 
-		public readonly static Theme ColoredNight = new Theme(
-			WallNear: MonoLight.WallNear,
-			WallFar: MonoLight.WallFar,
-			FloorNear: MonoLight.FloorNear,
-			FloorFar: MonoLight.FloorFar,
-			Sky: MonoLight.Sky,
-			WallTint: static dir => ColorTint(dir switch
-			{
-				Direction.South => Color.Beige,
-				Direction.North => Color.SkyBlue,
-				Direction.East => Color.Pink,
-				Direction.West or _ => Color.Violet // (Direction)228 - is valid Direction (enum) in C# 😡
-			}, Color.White)
-		);
-
-		public readonly static Theme ColoredDay = new Theme(
-			WallNear: ColoredNight.WallNear,
-			WallFar: ColoredNight.WallFar,
-			FloorNear: ColoredNight.FloorNear,
-			FloorFar: ColoredNight.FloorFar,
-			Sky: ColorTint(Color.SkyBlue, Color.White),
-			WallTint: ColoredNight.WallTint
-		);
-
-		public readonly static Theme MonoDark = new Theme(
-			WallNear: new Color(16, 16, 16),
-			WallFar: new Color(0, 0, 0),
-			FloorNear: new Color(16, 16, 16),
-			FloorFar: new Color(0, 0, 0),
-			Sky: new Color(0, 0, 0)
-		);
-
-		public readonly static Theme Lavaland = new Theme(
-			WallNear: new Color(0x60, 0x48, 0x48),
-			WallFar: new Color(60, 47, 47),
-			FloorNear: new Color(56, 46, 46),
-			FloorFar: new Color(35, 30, 30),
-			Sky: new Color(100, 11, 11)
-		);
-
-		public readonly static Theme Backroums = new Theme(
-			WallNear: new Color(172, 165, 53),
-			WallFar: new Color(68, 59, 0),
-			FloorNear: new Color(114, 92, 17),
-			FloorFar: new Color(46, 32, 0),
-			Sky: new Color(154, 143, 64)
-		);
+			field = value;
+		}
 	}
 
-	readonly record struct Theme(
-		Color WallNear,
-		Color WallFar,
-		Color FloorNear,
-		Color FloorFar,
-		Color Sky,
-		Func<Direction, Color>? WallTint = null
-	);
+	Raycaster _raycaster = new();
 
-	public static void Run()
+	public Program(RunArgs args)
+	{
+		RenderWidth = args.RenderSize.Width;
+		RenderHeight = args.RenderSize.Height;
+		TargetFPS = args.TargetFps;
+		VSyncEnabled = args.EnableVSync;
+	}
+	public Program() : this(new RunArgs(
+		RenderSize: new Size(1280, 720),
+		TargetFps: 60,
+		EnableVSync: true,
+		WindowMode.Resizable
+	)) { }
+
+	public void Run()
 	{
 		InitAudioDevice();
 
 		InitWindow(RenderWidth, RenderHeight, "The Walking Game");
-		SetWindowIcon(LoadImage(Path.Join(ResourcesFolder, "icon.png")));
+		SetWindowIcon(LoadImage(Path.Join(Constants.ResourcesFolder, "icon.png")));
 		SetConfigFlags(ConfigFlags.ResizableWindow);
 		SetConfigFlags(ConfigFlags.VSyncHint);
 
 		SetTargetFPS(TargetFPS);
 
-		Theme theme = Themes.ColoredNight;
+		Theme theme = Theme.ColoredNight;
 
-		string mapPath = Path.Join(ResourcesFolder, "Map.png");
+		string mapPath = Path.Join(Constants.ResourcesFolder, "Map.png");
 		Texture2D mapTexture = LoadTexture(mapPath);
 
 		GameMap gameMap;
@@ -130,6 +90,12 @@ public class Program
 			{
 				SetMousePosition(RenderWidth / 2, RenderHeight / 2);
 				HideCursor();
+			}
+
+			if (IsWindowResized() || IsWindowMaximized() || IsWindowMinimized())
+			{
+				_renderHeight = GetScreenHeight();
+				_renderWidth = GetScreenWidth();
 			}
 
 			if (IsKeyPressed(KeyboardKey.F2))
@@ -235,7 +201,7 @@ public class Program
 
 					// Map
 					var drawMap = () => {
-						float scale = DisplayedMapSize / mapTexture.Height;
+						float scale = RenderMapHeight / mapTexture.Height;
 						int width = (int)(mapTexture.Width * scale);
 						int height = (int)(mapTexture.Height * scale);
 						int margin = 12;
@@ -292,15 +258,14 @@ public class Program
 
 		CloseWindow();
 	}
-
 	private static void Main(string[] args)
 	{
-		Run();
+		new Program().Run();
 	}
 }
 
 // Потом
-public readonly record struct RunData(
+public readonly record struct RunArgs(
 	Size RenderSize,
 	int TargetFps,
 	bool EnableVSync,
@@ -312,4 +277,70 @@ public enum WindowMode
 	Fullscreen,
 	Borderless,
 	Resizable,
+}
+
+readonly record struct Theme(
+	Color WallNear,
+	Color WallFar,
+	Color FloorNear,
+	Color FloorFar,
+	Color Sky,
+	Func<Direction, Color>? WallTint = null
+)
+{
+	public readonly static Theme MonoLight = new Theme(
+		WallNear: new Color(255, 255, 255),
+		WallFar: new Color(127, 127, 127),
+		FloorNear: new Color(55, 55, 55),
+		FloorFar: new Color(15, 15, 15),
+		Sky: new Color(0, 0, 0)
+	);
+
+	public readonly static Theme ColoredNight = new Theme(
+		WallNear: MonoLight.WallNear,
+		WallFar: MonoLight.WallFar,
+		FloorNear: MonoLight.FloorNear,
+		FloorFar: MonoLight.FloorFar,
+		Sky: MonoLight.Sky,
+		WallTint: static dir => ColorTint(dir switch
+		{
+			Direction.South => Color.Beige,
+			Direction.North => Color.SkyBlue,
+			Direction.East => Color.Pink,
+			Direction.West or _ => Color.Violet // (Direction)228 - is valid Direction (enum) in C# 😡
+		}, Color.White)
+	);
+
+	public readonly static Theme ColoredDay = new Theme(
+		WallNear: ColoredNight.WallNear,
+		WallFar: ColoredNight.WallFar,
+		FloorNear: ColoredNight.FloorNear,
+		FloorFar: ColoredNight.FloorFar,
+		Sky: ColorTint(Color.SkyBlue, Color.White),
+		WallTint: ColoredNight.WallTint
+	);
+
+	public readonly static Theme MonoDark = new Theme(
+		WallNear: new Color(16, 16, 16),
+		WallFar: new Color(0, 0, 0),
+		FloorNear: new Color(16, 16, 16),
+		FloorFar: new Color(0, 0, 0),
+		Sky: new Color(0, 0, 0)
+	);
+
+	public readonly static Theme Lavaland = new Theme(
+		WallNear: new Color(0x60, 0x48, 0x48),
+		WallFar: new Color(60, 47, 47),
+		FloorNear: new Color(56, 46, 46),
+		FloorFar: new Color(35, 30, 30),
+		Sky: new Color(100, 11, 11)
+	);
+
+	public readonly static Theme Backroums = new Theme(
+		WallNear: new Color(172, 165, 53),
+		WallFar: new Color(68, 59, 0),
+		FloorNear: new Color(114, 92, 17),
+		FloorFar: new Color(46, 32, 0),
+		Sky: new Color(154, 143, 64)
+	);
 }

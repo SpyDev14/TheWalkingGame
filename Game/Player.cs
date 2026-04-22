@@ -64,7 +64,7 @@ internal class Player
 	private readonly SoundCollection _footstepSound = new(Enumerable
 		.Range(1, 6)
 		.Select(x => $"Audio/floor{x}.ogg")
-		.Select(x => Path.Join(Program.ResourcesFolder, x))
+		.Select(x => Path.Join(Constants.ResourcesFolder, x))
 	);
 
 	public static Player SpawnAt(Vector2 pos) => new Player() { Position = pos };

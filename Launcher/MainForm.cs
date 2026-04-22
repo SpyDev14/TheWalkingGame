@@ -40,7 +40,7 @@ public partial class MainForm : Form
 	private void runBtn_Click(object sender, EventArgs e)
 	{
 		Hide();
-		try { Game.Program.Run(); }
+		try { new Game.Program().Run(); }
 		finally { Close(); }
 	}
 }
