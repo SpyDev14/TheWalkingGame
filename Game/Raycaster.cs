@@ -1,4 +1,6 @@
-﻿namespace Game;
+﻿using Game.Types;
+
+namespace Game;
 
 internal enum Direction : byte
 {

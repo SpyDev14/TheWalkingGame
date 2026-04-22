@@ -1,4 +1,5 @@
 ﻿using Game.Audio;
+using Game.Types;
 using Key = Raylib_cs.KeyboardKey;
 using Raylib = Raylib_cs.Raylib;
 

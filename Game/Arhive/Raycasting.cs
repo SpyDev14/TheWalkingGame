@@ -1,4 +1,5 @@
-﻿using Point = System.Drawing.Point;
+﻿using Game.Math;
+using Point = System.Drawing.Point;
 
 namespace Game.Arhive;
 

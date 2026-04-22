@@ -1,4 +1,5 @@
-﻿using Raylib_cs;
+﻿using Game.Types;
+using Raylib_cs;
 using static Raylib_cs.Raylib;
 
 namespace Game;
