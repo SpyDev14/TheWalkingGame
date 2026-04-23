@@ -58,8 +58,10 @@ public class Program
 		GameMap gameMap;
 		if (!OperatingSystem.IsWindows()) // `Bitmap` required Windows
 			gameMap = GameMap.PlugMap;
+#pragma warning disable CA1416 // "Windows only!!!"
 		// C#, WHAT IS WRONG WITH YOU?!!! vvvvvvvvvvvvvvvv
 		else gameMap = GameMap.FromImage(new Bitmap(mapPath), static px =>
+#pragma warning restore CA1416
 		{
 			if (px.IsColorEquals(Color.White))
 				return GameObject.Wall;
@@ -133,13 +135,13 @@ public class Program
 
 						float distance = info.Distance * MathF.Cos(angleFromCenter.Radians);
 
-						float t = 1 - distance / player.ViewDistance;
 						float planeDistance = (RenderWidth / 2) / MathF.Tan(player.FOV.Radians / 2);
 						int wallHeight = (int)(planeDistance / distance * Constants.TILES_PER_METER);
 
 						float wallHeightRatio = wallHeight / RenderHeight;
 						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(horizontOffset * (1 - wallHeightRatio));
 
+						float t = 1 - distance / player.ViewDistance;
 						Color color = ColorLerp(theme.WallFar, theme.WallNear, t);
 						if (theme.WallTint is not null)
 							color = ColorTint(color, theme.WallTint(info.Direction));
