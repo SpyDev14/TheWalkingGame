@@ -91,8 +91,7 @@ internal class Player
 		 */
 		static bool IsKeyDown(Key key) => Raylib.IsKeyDown(key);
 
-		const float MAX_DELTA = 0.033f;
-		float dt = MathF.Min((float)deltaTime.TotalSeconds, MAX_DELTA);
+		float dt = (float)deltaTime.TotalSeconds;
 
 		float forward = 0;
 		float strafe = 0;
