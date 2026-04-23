@@ -2,14 +2,6 @@
 
 namespace Game;
 
-internal enum Direction : byte
-{
-	South,
-	North,
-	East,
-	West,
-}
-
 internal readonly record struct HitInfo(float Distance, Direction Direction, (int x, int y) CellPos);
 internal class Raycaster
 {

@@ -58,6 +58,7 @@ public class Program
 		GameMap gameMap;
 		if (!OperatingSystem.IsWindows()) // `Bitmap` required Windows
 			gameMap = GameMap.PlugMap;
+		// C#, WHAT IS WRONG WITH YOU?!!! vvvvvvvvvvvvvvvv
 		else gameMap = GameMap.FromImage(new Bitmap(mapPath), static px =>
 		{
 			if (px.IsColorEquals(Color.White))
@@ -93,9 +94,8 @@ public class Program
 			{
 				// World
 				{
-					int horizontOffset = (int)(
-						StepSize * (1 + Math.Abs(player.StepPhase) * player.StepVisualSizeModifier.Vertical)
-					);
+					Angle renderRotate = Angle.FromDegrees(player.InputDirection.X * 5);
+					int horizontOffset = (int)(StepSize * Math.Abs(player.StepPhase) * player.StepVisualSizeModifier.Vertical);
 
 					// Sky & Floor
 					{

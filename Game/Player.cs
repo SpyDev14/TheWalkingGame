@@ -61,6 +61,7 @@ internal class Player
 
 	/// <summary>In meters</summary>
 	private Vector2 _velocity;
+	public Vector2 InputDirection { get; private set; }
 	private bool _isSprint = false;
 
 
@@ -105,6 +106,7 @@ internal class Player
 		_isZoom = IsKeyDown(Key.C);
 
 		Vector2 inputDirection = new(strafe, forward);
+		InputDirection = inputDirection;
 		if (!inputDirection.IsZero())
 		{
 			inputDirection = inputDirection.Normalized();
