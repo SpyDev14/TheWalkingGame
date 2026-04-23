@@ -1,5 +1,5 @@
-using Program = Game.Program;
-using Raylib_cs;
+using WindowMode = Game.WindowMode;
+using RunArgs = Game.RunArgs;
 
 namespace Launcher;
 
@@ -26,21 +26,42 @@ public partial class MainForm : Form
 		renderSizeSelect.Items.Clear();
 		foreach (var size in _renderSizes)
 			renderSizeSelect.Items.Add(size);
+		renderSizeSelect.SelectedIndex = 0;
 
-		renderSizeSelect.Format += (_, e) =>
-		{
+		renderSizeSelect.Format += (_, e) => {
 			if (e.ListItem is Size size)
 				e.Value = $"{size.Width} x {size.Height}";
 		};
-		renderSizeSelect.SelectedIndex = 0;
 	}
 
+	private RunArgs RunArgs => new RunArgs(
+		RenderSize: (Size)renderSizeSelect.SelectedItem!,
+		TargetFps: 60, // Not need to configure now
+		EnableVSync: enableVSyncChk.Checked,
+		SelectedWindowMode
+	);
+
+	private WindowMode SelectedWindowMode =>
+		(fullscreenModeChk.Checked, borderlessWindowModeChk.Checked) switch
+		{
+			(false, false) => WindowMode.Resizable,
+			(false, true ) => WindowMode.Borderless,
+			// borderlessChk disabled on fullscreen, but may be checked
+			(true, _     ) => WindowMode.Fullscreen,
+		};
+
+	// Event handling
 	private void closeBtn_Click(object sender, EventArgs e) => Close();
 
 	private void runBtn_Click(object sender, EventArgs e)
 	{
 		Hide();
-		try { new Game.Program().Run(); }
+		try { new Game.Program(RunArgs).Run(); }
 		finally { Close(); }
+	}
+
+	private void fullscreenModeChk_CheckedChanged(object sender, EventArgs e)
+	{
+		borderlessWindowModeChk.Enabled = !fullscreenModeChk.Checked;
 	}
 }

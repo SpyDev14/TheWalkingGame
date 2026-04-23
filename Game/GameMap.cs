@@ -14,7 +14,7 @@ internal class GameMap
 	public readonly Size Size;
 	public ImmutableArray<bool> CollisionField { get; }
 	public Texture2D TextureForRender { get; }
-	public bool IsOutsideSolid { get; set; }
+	public bool OutsideIsSolid { get; set; }
 
 	public Vector2 SpawnPoint => new Vector2(_spawnCell.x, _spawnCell.y) + new Vector2(0.5f);
 	private (int x, int y) _spawnCell;
@@ -25,14 +25,29 @@ internal class GameMap
 		CollisionField = field.Select(x => x == GameObject.Wall).ToImmutableArray();
 
 		_spawnCell = (size.Width / 2, size.Height / 2);
-		
-
 		for (int y = 0; y < Size.Height; y++)
 			for (int x = 0; x < Size.Width; x++)
 				if (field[y*size.Width+x] == GameObject.SpawnPoint)
 					_spawnCell = (x, y);
 
+		Image image = Raylib.GenImageColor(size.Width, size.Height, Color.Blank);
+		for (int y = 0; y < size.Height; y++)
+			for (int x = 0; x < size.Width; x++)
+			{
+				var cell = field[y * size.Width + x];
+				Color color = cell switch
+				{
+					GameObject.Wall => Color.White,
+					GameObject.SpawnPoint => Raylib.ColorBrightness(Color.Red, 0.5f),
+					GameObject.None => Color.Black,
+					_ => Color.Magenta // Unknown
+				};
 
+				Raylib.ImageDrawRectangle(ref image, x, y, 1, 1, color);
+			}
+
+		TextureForRender = Raylib.LoadTextureFromImage(image);
+		Raylib.UnloadImage(image);
 	}
 
 	public static GameMap FromBlueprint(
@@ -98,7 +113,7 @@ internal class GameMap
 	public bool IsCollided(int x, int y)
 	{
 		if (IsOutsideMap(x, y))
-			return IsOutsideSolid;
+			return OutsideIsSolid;
 
 		int idx = y * Size.Width + x;
 		return CollisionField[idx];
@@ -108,7 +123,7 @@ internal class GameMap
 	{
 		if (IsOutsideMap(pos + new Vector2(radius)) ||
 			IsOutsideMap(pos - new Vector2(radius)))
-			return IsOutsideSolid;
+			return OutsideIsSolid;
 
 		// Check rectangle size (points positions)
 		int minX = (int)MathF.Floor(pos.X - radius);

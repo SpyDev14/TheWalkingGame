@@ -6,22 +6,30 @@ namespace Game;
 
 public class Program
 {
-	int _renderWidth;
-	int _renderHeight;
-	int RenderWidth { get => _renderWidth; set => SetWindowSize(_renderWidth = value, RenderHeight); }
-	int RenderHeight { get => _renderHeight; set => SetWindowSize(RenderWidth, _renderHeight = value); }
+	int RenderWidth { get; set; }
+	int RenderHeight { get; set; }
 
 	int HorizontPos => RenderHeight / 2;
 
 	int StepSize => RenderHeight / 80;
-
 	int RenderMapHeight => RenderHeight / 5;
-	int TargetFPS { get; set => SetTargetFPS(field = value); }
+	int TargetFPS { /*get;*/ set { if (IsWindowReady()) { SetTargetFPS(field = value); } } }
+	WindowMode WindowMode {
+		/*get;*/ set
+		{
+			if (field == value || !IsWindowReady())
+				return;
+
+			ClearWindowState(field.AsConfigFlag());
+			SetWindowState(value.AsConfigFlag());
+			field = value;
+		}
+	}
 	bool VSyncEnabled
 	{
-		get;
-		set
+		/*get;*/ set
 		{
+			if      (!IsWindowReady()) return;
 			if      (!value && field) ClearWindowState(ConfigFlags.VSyncHint);
 			else if (value && !field) SetConfigFlags(ConfigFlags.VSyncHint);
 
@@ -29,15 +37,17 @@ public class Program
 		}
 	}
 
+	readonly RunArgs Args;
+
 	Raycaster _raycaster = new();
 
 	public Program(RunArgs args)
 	{
 		RenderWidth = args.RenderSize.Width;
 		RenderHeight = args.RenderSize.Height;
-		TargetFPS = args.TargetFps;
-		VSyncEnabled = args.EnableVSync;
+		Args = args;
 	}
+
 	public Program() : this(new RunArgs(
 		RenderSize: new Size(1280, 720),
 		TargetFps: 60,
@@ -51,34 +61,37 @@ public class Program
 
 		InitWindow(RenderWidth, RenderHeight, "The Walking Game");
 		SetWindowIcon(LoadImage(Path.Join(Constants.ResourcesFolder, "icon.png")));
-		SetConfigFlags(ConfigFlags.ResizableWindow);
-		SetConfigFlags(ConfigFlags.VSyncHint);
+		
+		VSyncEnabled = Args.EnableVSync;
+		WindowMode   = Args.WindowMode;
+		TargetFPS    = Args.TargetFps;
 
-		SetTargetFPS(TargetFPS);
+		int currMonitorId = GetCurrentMonitor();
+		int currMonitorHeight = GetMonitorHeight(currMonitorId);
+		int currMonitorWidth = GetMonitorWidth(currMonitorId);
+		SetWindowMaxSize(currMonitorWidth, currMonitorHeight);
+		SetWindowMinSize(currMonitorWidth / 6, currMonitorHeight / 6);
 
-		Theme theme = Theme.ColoredNight;
 
-		string mapPath = Path.Join(Constants.ResourcesFolder, "Map.png");
+		Theme theme = Theme.Lavaland;
+
+		string mapPath = Path.Join(Constants.ResourcesFolder, "Map2.png");
 		Texture2D mapTexture = LoadTexture(mapPath);
 
 		GameMap gameMap;
-		bool usedPlugMap = false;
-		if (!OperatingSystem.IsWindows())
-		{
+		if (!OperatingSystem.IsWindows()) // `Bitmap` required Windows
 			gameMap = GameMap.PlugMap;
-			usedPlugMap = true;
-		}
-		else
-			// `Bitmap` required Windows
-			gameMap = GameMap.FromImage(new Bitmap(mapPath), static px =>
-			{
-				if (px.IsColorEquals(Color.White))
-					return GameObject.Wall;
-				if (px.IsColorEquals(new Color(255, 0, 0)))
-					return GameObject.SpawnPoint;
-				return GameObject.None;
-			});
-		gameMap.IsOutsideSolid = false;
+		else gameMap = GameMap.FromImage(new Bitmap(mapPath), static px =>
+		{
+			if (px.IsColorEquals(Color.White))
+				return GameObject.Wall;
+			if (px.IsColorEquals(new Color(255, 0, 0)))
+				return GameObject.SpawnPoint;
+			return GameObject.None;
+		});
+
+		gameMap.OutsideIsSolid = false;
+		mapTexture = gameMap.TextureForRender;
 
 		Player player = Player.SpawnAt(gameMap.SpawnPoint);
 
@@ -86,16 +99,11 @@ public class Program
 		while (!WindowShouldClose())
 		{
 			TimeSpan deltaTime = TimeSpan.FromSeconds(GetFrameTime());
-			if (IsWindowFocused())
-			{
-				SetMousePosition(RenderWidth / 2, RenderHeight / 2);
-				HideCursor();
-			}
 
-			if (IsWindowResized() || IsWindowMaximized() || IsWindowMinimized())
+			if (IsWindowResized())
 			{
-				_renderHeight = GetScreenHeight();
-				_renderWidth = GetScreenWidth();
+				RenderHeight = GetScreenHeight();
+				RenderWidth  = GetScreenWidth();
 			}
 
 			if (IsKeyPressed(KeyboardKey.F2))
@@ -200,7 +208,7 @@ public class Program
 					int topMargin = 8;
 
 					// Map
-					var drawMap = () => {
+					{
 						float scale = RenderMapHeight / mapTexture.Height;
 						int width = (int)(mapTexture.Width * scale);
 						int height = (int)(mapTexture.Height * scale);
@@ -217,23 +225,26 @@ public class Program
 
 						DrawTextureEx(mapTexture, new(margin, margin), 0, scale, Color.White);
 
-						float playerPointRadius = 3.5f;
-						float playerPointX = margin + player.Position.X * scale;
-						float playerPointY = margin + player.Position.Y * scale;
-						DrawCircle(
-							(int)playerPointX,
-							(int)playerPointY,
-							playerPointRadius,
-							Color.Red
-						);
-						DrawRectanglePro(
-							new Rectangle(playerPointX, playerPointY, playerPointRadius * 2, 2),
-							new(0, 0),
-							player.Rotate.Degrees,
-							Color.Red
-						);
-					};
-					if (!usedPlugMap) drawMap();
+						var drawPlayer = () => {
+							float playerPointRadius = 3.5f;
+							float playerPointX = margin + player.Position.X * scale;
+							float playerPointY = margin + player.Position.Y * scale;
+							DrawCircle(
+								(int)playerPointX,
+								(int)playerPointY,
+								playerPointRadius,
+								Color.Red
+							);
+							DrawRectanglePro(
+								new Rectangle(playerPointX, playerPointY, playerPointRadius * 2, 2),
+								new(0, 0),
+								player.Rotate.Degrees,
+								Color.Red
+							);
+						};
+						if (!gameMap.IsOutsideMap(player.Position))
+							drawPlayer();
+					}
 
 					DrawFPS(leftMargin, topMargin);
 
@@ -264,7 +275,6 @@ public class Program
 	}
 }
 
-// Потом
 public readonly record struct RunArgs(
 	Size RenderSize,
 	int TargetFps,
@@ -277,6 +287,16 @@ public enum WindowMode
 	Fullscreen,
 	Borderless,
 	Resizable,
+}
+public static class impl_WindowMode
+{
+	public static ConfigFlags AsConfigFlag(this WindowMode self) => self switch
+	{
+		WindowMode.Resizable  => ConfigFlags.ResizableWindow,
+		WindowMode.Borderless => ConfigFlags.BorderlessWindowMode,
+		WindowMode.Fullscreen => ConfigFlags.FullscreenMode,
+		_ => throw new ArgumentOutOfRangeException(nameof(WindowMode)),
+	};
 }
 
 readonly record struct Theme(

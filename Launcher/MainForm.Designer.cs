@@ -29,9 +29,9 @@ partial class MainForm
 	private void InitializeComponent()
 	{
 		mainPicture = new PictureBox();
-		fullScreenModeCheckBox = new CheckBox();
-		borderlessWindowModeCheckBox = new CheckBox();
-		enableVSyncCheckBox = new CheckBox();
+		fullscreenModeChk = new CheckBox();
+		borderlessWindowModeChk = new CheckBox();
+		enableVSyncChk = new CheckBox();
 		renderSizeSelect = new ComboBox();
 		renderSizeLbl = new Label();
 		closeBtn = new Button();
@@ -44,51 +44,48 @@ partial class MainForm
 		mainPicture.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
 		mainPicture.BorderStyle = BorderStyle.Fixed3D;
 		mainPicture.Image = Properties.Resources.main_picture_crop;
-		mainPicture.Location = new Point(14, 16);
-		mainPicture.Margin = new Padding(3, 4, 3, 4);
+		mainPicture.Location = new Point(12, 12);
 		mainPicture.Name = "mainPicture";
-		mainPicture.Size = new Size(394, 180);
+		mainPicture.Size = new Size(345, 136);
 		mainPicture.SizeMode = PictureBoxSizeMode.StretchImage;
 		mainPicture.TabIndex = 1;
 		mainPicture.TabStop = false;
 		// 
-		// fullScreenModeCheckBox
+		// fullscreenModeChk
 		// 
-		fullScreenModeCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-		fullScreenModeCheckBox.CheckAlign = ContentAlignment.MiddleRight;
-		fullScreenModeCheckBox.Location = new Point(14, 213);
-		fullScreenModeCheckBox.Margin = new Padding(3, 4, 3, 4);
-		fullScreenModeCheckBox.Name = "fullScreenModeCheckBox";
-		fullScreenModeCheckBox.Size = new Size(394, 21);
-		fullScreenModeCheckBox.TabIndex = 2;
-		fullScreenModeCheckBox.Text = "Fullscreen mode:";
-		fullScreenModeCheckBox.UseVisualStyleBackColor = true;
+		fullscreenModeChk.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+		fullscreenModeChk.CheckAlign = ContentAlignment.MiddleRight;
+		fullscreenModeChk.Location = new Point(12, 160);
+		fullscreenModeChk.Name = "fullScreenModeCheckBox";
+		fullscreenModeChk.Size = new Size(345, 16);
+		fullscreenModeChk.TabIndex = 2;
+		fullscreenModeChk.Text = "Fullscreen mode:";
+		fullscreenModeChk.UseVisualStyleBackColor = true;
+		fullscreenModeChk.CheckedChanged += fullscreenModeChk_CheckedChanged;
 		// 
-		// borderlessWindowModeCheckBox
+		// borderlessWindowModeChk
 		// 
-		borderlessWindowModeCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-		borderlessWindowModeCheckBox.CheckAlign = ContentAlignment.MiddleRight;
-		borderlessWindowModeCheckBox.Location = new Point(14, 245);
-		borderlessWindowModeCheckBox.Margin = new Padding(3, 4, 3, 4);
-		borderlessWindowModeCheckBox.Name = "borderlessWindowModeCheckBox";
-		borderlessWindowModeCheckBox.Size = new Size(394, 21);
-		borderlessWindowModeCheckBox.TabIndex = 3;
-		borderlessWindowModeCheckBox.Text = "Borderless window:";
-		borderlessWindowModeCheckBox.UseVisualStyleBackColor = true;
+		borderlessWindowModeChk.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+		borderlessWindowModeChk.CheckAlign = ContentAlignment.MiddleRight;
+		borderlessWindowModeChk.Location = new Point(12, 184);
+		borderlessWindowModeChk.Name = "borderlessWindowModeCheckBox";
+		borderlessWindowModeChk.Size = new Size(345, 16);
+		borderlessWindowModeChk.TabIndex = 3;
+		borderlessWindowModeChk.Text = "Borderless window:";
+		borderlessWindowModeChk.UseVisualStyleBackColor = true;
 		// 
-		// enableVSyncCheckBox
+		// enableVSyncChk
 		// 
-		enableVSyncCheckBox.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
-		enableVSyncCheckBox.CheckAlign = ContentAlignment.MiddleRight;
-		enableVSyncCheckBox.Checked = true;
-		enableVSyncCheckBox.CheckState = CheckState.Checked;
-		enableVSyncCheckBox.Location = new Point(14, 313);
-		enableVSyncCheckBox.Margin = new Padding(3, 4, 3, 4);
-		enableVSyncCheckBox.Name = "enableVSyncCheckBox";
-		enableVSyncCheckBox.Size = new Size(394, 21);
-		enableVSyncCheckBox.TabIndex = 4;
-		enableVSyncCheckBox.Text = "VSync:";
-		enableVSyncCheckBox.UseVisualStyleBackColor = true;
+		enableVSyncChk.Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right;
+		enableVSyncChk.CheckAlign = ContentAlignment.MiddleRight;
+		enableVSyncChk.Checked = true;
+		enableVSyncChk.CheckState = CheckState.Checked;
+		enableVSyncChk.Location = new Point(12, 235);
+		enableVSyncChk.Name = "enableVSyncCheckBox";
+		enableVSyncChk.Size = new Size(345, 16);
+		enableVSyncChk.TabIndex = 4;
+		enableVSyncChk.Text = "VSync:";
+		enableVSyncChk.UseVisualStyleBackColor = true;
 		// 
 		// renderSizeSelect
 		// 
@@ -97,17 +94,16 @@ partial class MainForm
 		renderSizeSelect.FlatStyle = FlatStyle.System;
 		renderSizeSelect.FormattingEnabled = true;
 		renderSizeSelect.Items.AddRange(new object[] { "1760 x 990", "1920 x 1080" });
-		renderSizeSelect.Location = new Point(202, 275);
-		renderSizeSelect.Margin = new Padding(3, 4, 3, 4);
+		renderSizeSelect.Location = new Point(177, 206);
 		renderSizeSelect.Name = "renderSizeSelect";
-		renderSizeSelect.Size = new Size(205, 28);
+		renderSizeSelect.Size = new Size(180, 23);
 		renderSizeSelect.TabIndex = 5;
 		// 
 		// renderSizeLbl
 		// 
-		renderSizeLbl.Location = new Point(15, 275);
+		renderSizeLbl.Location = new Point(13, 206);
 		renderSizeLbl.Name = "renderSizeLbl";
-		renderSizeLbl.Size = new Size(181, 31);
+		renderSizeLbl.Size = new Size(158, 23);
 		renderSizeLbl.TabIndex = 6;
 		renderSizeLbl.Text = "Render size";
 		renderSizeLbl.TextAlign = ContentAlignment.MiddleLeft;
@@ -115,10 +111,9 @@ partial class MainForm
 		// closeBtn
 		// 
 		closeBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-		closeBtn.Location = new Point(322, 353);
-		closeBtn.Margin = new Padding(3, 4, 3, 4);
+		closeBtn.Location = new Point(282, 265);
 		closeBtn.Name = "closeBtn";
-		closeBtn.Size = new Size(86, 31);
+		closeBtn.Size = new Size(75, 23);
 		closeBtn.TabIndex = 7;
 		closeBtn.Text = "Cancel";
 		closeBtn.UseVisualStyleBackColor = true;
@@ -127,10 +122,9 @@ partial class MainForm
 		// runBtn
 		// 
 		runBtn.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
-		runBtn.Location = new Point(230, 353);
-		runBtn.Margin = new Padding(3, 4, 3, 4);
+		runBtn.Location = new Point(201, 265);
 		runBtn.Name = "runBtn";
-		runBtn.Size = new Size(86, 31);
+		runBtn.Size = new Size(75, 23);
 		runBtn.TabIndex = 8;
 		runBtn.Text = "Run";
 		runBtn.UseVisualStyleBackColor = true;
@@ -138,19 +132,20 @@ partial class MainForm
 		// 
 		// MainForm
 		// 
-		AutoScaleDimensions = new SizeF(8F, 20F);
+		AutoScaleDimensions = new SizeF(7F, 15F);
 		AutoScaleMode = AutoScaleMode.Font;
-		ClientSize = new Size(422, 397);
+		ClientSize = new Size(369, 298);
 		ControlBox = false;
 		Controls.Add(runBtn);
 		Controls.Add(closeBtn);
 		Controls.Add(renderSizeLbl);
 		Controls.Add(renderSizeSelect);
-		Controls.Add(enableVSyncCheckBox);
-		Controls.Add(borderlessWindowModeCheckBox);
-		Controls.Add(fullScreenModeCheckBox);
+		Controls.Add(enableVSyncChk);
+		Controls.Add(borderlessWindowModeChk);
+		Controls.Add(fullscreenModeChk);
 		Controls.Add(mainPicture);
 		FormBorderStyle = FormBorderStyle.FixedSingle;
+		Margin = new Padding(3, 2, 3, 2);
 		MaximizeBox = false;
 		MinimizeBox = false;
 		Name = "MainForm";
@@ -161,9 +156,9 @@ partial class MainForm
 
 	#endregion
 	private PictureBox mainPicture;
-	private CheckBox fullScreenModeCheckBox;
-	private CheckBox borderlessWindowModeCheckBox;
-	private CheckBox enableVSyncCheckBox;
+	private CheckBox fullscreenModeChk;
+	private CheckBox borderlessWindowModeChk;
+	private CheckBox enableVSyncChk;
 	private ComboBox renderSizeSelect;
 	private Label renderSizeLbl;
 	private Button closeBtn;

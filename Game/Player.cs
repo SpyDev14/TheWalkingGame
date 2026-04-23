@@ -1,5 +1,6 @@
 ﻿using Game.Audio;
 using Game.Types;
+using Raylib_cs;
 using Key = Raylib_cs.KeyboardKey;
 using Raylib = Raylib_cs.Raylib;
 
@@ -9,6 +10,7 @@ internal class Player
 {
 	/// <summary>Radians per pixel</summary>
 	private float MouseSensitivity { get; set; } = 0.001f;
+	bool _mouseCapturingEnabled = true;
 
 	private const float ZOOM_SCALE = 0.5f;
 	private bool _isZoom = false;
@@ -61,6 +63,7 @@ internal class Player
 	private Vector2 _velocity;
 	private bool _isSprint = false;
 
+
 	private readonly SoundCollection _footstepSound = new(Enumerable
 		.Range(1, 6)
 		.Select(x => $"Audio/floor{x}.ogg")
@@ -93,7 +96,6 @@ internal class Player
 
 		float forward = 0;
 		float strafe = 0;
-		
 		if (IsKeyDown(Key.W)) forward += 1f;
 		if (IsKeyDown(Key.S)) forward -= 1f;
 		if (IsKeyDown(Key.D)) strafe += 1f;
@@ -141,8 +143,19 @@ internal class Player
 			_footstepSound.Play();
 
 		// Mouse
-		_rotate.NormalizedRadians += Raylib.GetMouseDelta().X * MouseSensitivity;
-		_rotate = _rotate.Normalized();
+		if (Raylib.IsMouseButtonPressed(MouseButton.Left))
+			_mouseCapturingEnabled = !_mouseCapturingEnabled;
+
+		if (_mouseCapturingEnabled)
+		{
+			_rotate.NormalizedRadians += Raylib.GetMouseDelta().X * MouseSensitivity;
+			_rotate = _rotate.Normalized();
+
+			var centerPos = Raylib.GetScreenCenter();
+			Raylib.SetMousePosition((int)centerPos.X, (int)centerPos.Y);
+			Raylib.HideCursor();
+		}
+		else Raylib.ShowCursor();
 	}
 
 	private Vector2 CalcCollisionAdjustedDelta(Vector2 delta, GameMap map)
