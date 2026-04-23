@@ -8,34 +8,10 @@ public class Program
 {
 	int RenderWidth { get; set; }
 	int RenderHeight { get; set; }
-
 	int HorizontPos => RenderHeight / 2;
 
 	int StepSize => RenderHeight / 80;
 	int RenderMapHeight => RenderHeight / 5;
-	int TargetFPS { /*get;*/ set { if (IsWindowReady()) { SetTargetFPS(field = value); } } }
-	WindowMode WindowMode {
-		/*get;*/ set
-		{
-			if (field == value || !IsWindowReady())
-				return;
-
-			ClearWindowState(field.AsConfigFlag());
-			SetWindowState(value.AsConfigFlag());
-			field = value;
-		}
-	}
-	bool VSyncEnabled
-	{
-		/*get;*/ set
-		{
-			if      (!IsWindowReady()) return;
-			if      (!value && field) ClearWindowState(ConfigFlags.VSyncHint);
-			else if (value && !field) SetConfigFlags(ConfigFlags.VSyncHint);
-
-			field = value;
-		}
-	}
 
 	readonly RunArgs Args;
 
@@ -61,10 +37,11 @@ public class Program
 
 		InitWindow(RenderWidth, RenderHeight, "The Walking Game");
 		SetWindowIcon(LoadImage(Path.Join(Constants.ResourcesFolder, "icon.png")));
-		
-		VSyncEnabled = Args.EnableVSync;
-		WindowMode   = Args.WindowMode;
-		TargetFPS    = Args.TargetFps;
+
+		SetWindowState(Args.WindowMode.AsConfigFlag());
+		SetTargetFPS(Args.TargetFps);
+		if (Args.EnableVSync)
+			SetWindowState(ConfigFlags.VSyncHint);
 
 		int currMonitorId = GetCurrentMonitor();
 		int currMonitorHeight = GetMonitorHeight(currMonitorId);
@@ -290,6 +267,7 @@ public enum WindowMode
 }
 public static class impl_WindowMode
 {
+	// Previously used in several places
 	public static ConfigFlags AsConfigFlag(this WindowMode self) => self switch
 	{
 		WindowMode.Resizable  => ConfigFlags.ResizableWindow,
