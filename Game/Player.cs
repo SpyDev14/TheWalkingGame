@@ -37,9 +37,9 @@ internal class Player
 	private const float MAX_SPEED = 1.2f;
 	private const float MAX_SPRINT_SPEED = MAX_SPEED * 1.5f;
 
-	///<summary>m / sec for get full speed</summary>
+	///<summary>Acceleration speed in m / sec</summary>
 	private const float ACCELERATION = 8.0f;
-	/// <summary>m / sec for full stop after lost control</summary>
+	/// <summary>Stop speed in m / sec (sliding after lost control)</summary>
 	private const float FRICTION = 2.0f;
 
 	// Step animation
@@ -64,6 +64,11 @@ internal class Player
 	public Vector2 InputDirection { get; private set; }
 	private bool _isSprint = false;
 
+	/// <summary>
+	/// Aka "ref GameMap". Returns current game map.
+	/// In the future may be refactored to ILevelManager dependency.
+	/// </summary>
+	private readonly Func<GameMap> _getCurrentGameMap;
 
 	private readonly SoundCollection _footstepSound = new(Enumerable
 		.Range(1, 6)
@@ -71,12 +76,16 @@ internal class Player
 		.Select(x => Path.Join(Constants.ResourcesFolder, x))
 	);
 
-	public static Player SpawnAt(Vector2 pos) => new Player() { Position = pos };
+	public Player(Vector2 pos, Func<GameMap> getCurrentGameMap)
+	{
+		Position = pos;
+		_getCurrentGameMap = getCurrentGameMap;
+	}
 
 	/// <summary>
 	/// Should be called any frame
 	/// </summary>
-	public void Update(TimeSpan deltaTime, GameMap map)
+	public void Update(TimeSpan deltaTime)
 	{
 		/*
 		 * map can be replaced by:
@@ -93,6 +102,7 @@ internal class Player
 		static bool IsKeyDown(Key key) => Raylib.IsKeyDown(key);
 
 		float dt = (float)deltaTime.TotalSeconds;
+		var map = _getCurrentGameMap();
 
 		float forward = 0;
 		float strafe = 0;

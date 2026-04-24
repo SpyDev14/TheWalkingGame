@@ -73,7 +73,7 @@ public class Program
 		gameMap.OutsideIsSolid = false;
 		mapTexture = gameMap.TextureForRender;
 
-		Player player = Player.SpawnAt(gameMap.SpawnPoint);
+		Player player = new Player(gameMap.SpawnPoint, () => gameMap);
 
 		bool interfaceEnabled = true;
 		while (!WindowShouldClose())
@@ -98,6 +98,7 @@ public class Program
 				{
 					Angle renderRotate = Angle.FromDegrees(player.InputDirection.X * 5);
 					int horizontOffset = (int)(StepSize * Math.Abs(player.StepPhase) * player.StepVisualSizeModifier.Vertical);
+					horizontOffset = (int)(-RenderHeight * 0.8 / 2);
 
 					// Sky & Floor
 					{
