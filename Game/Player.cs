@@ -19,7 +19,7 @@ internal class Player
 	public Angle FOV => _fov * (_isZoom ? ZOOM_SCALE : 1);
 
 	/// <summary>In tiles</summary>
-	public float ViewDistance { get; private set; } = 12.0f * Constants.TILES_PER_METER;
+	public float ViewDistance { get; private set; } = 12.0f.ToTiles();
 
 	private Angle _rotate = default;
 	public Angle Rotate => _rotate;
@@ -73,7 +73,7 @@ internal class Player
 	private readonly SoundCollection _footstepSound = new(Enumerable
 		.Range(1, 6)
 		.Select(x => $"Audio/floor{x}.ogg")
-		.Select(x => Path.Join(Constants.ResourcesFolder, x))
+		.Select(x => Path.Join(REWORK_IT.ResourcesFolder, x))
 	);
 
 	public Player(Vector2 pos, Func<GameMap> getCurrentGameMap)
@@ -115,14 +115,13 @@ internal class Player
 		_isSprint = IsKeyDown(Key.LeftShift);
 		_isZoom = IsKeyDown(Key.C);
 
-		Vector2 inputDirection = new(strafe, forward);
-		InputDirection = inputDirection;
-		if (!inputDirection.IsZero())
+		InputDirection = new(strafe, forward);
+		if (!InputDirection.IsZero())
 		{
-			inputDirection = inputDirection.Normalized();
+			InputDirection = InputDirection.Normalized();
 			Vector2 worldDirection = (
-				(Rotate + Angle.Right).AsDirection() * inputDirection.X +
-				Rotate.AsDirection() * inputDirection.Y
+				(Rotate + Angle.Right).AsDirection() * InputDirection.X +
+				Rotate.AsDirection() * InputDirection.Y
 			);
 
 			Vector2 targetVelocity = worldDirection * CurrentMaxSpeed;
@@ -139,7 +138,7 @@ internal class Player
 			
 		}
 		// Move (apply velocity)
-		Vector2 moveDelta = CalcCollisionAdjustedDelta(_velocity * dt * Constants.TILES_PER_METER, map);
+		Vector2 moveDelta = CalcCollisionAdjustedDelta(_velocity * dt * UnitConverations.TILES_PER_METER, map);
 		Position += moveDelta;
 
 		// Step animation & step sound
@@ -173,8 +172,7 @@ internal class Player
 	{
 		// If way is clear, let's go
 		// If position is wrong, let escape
-		if (CanMove(delta, map) ||
-			!CanMove(new(), map))
+		if (CanMove(delta, map) || !CanMove(Vector2.Zero, map))
 			return delta;
 
 		Vector2 stepByX = new Vector2(delta.X, 0);
@@ -191,6 +189,6 @@ internal class Player
 	}
 
 	private bool CanMove(Vector2 delta, GameMap map) => !map.IsCircleCollided(
-		Position + delta, COLLISION_RADIUS * Constants.TILES_PER_METER
+		Position + delta, COLLISION_RADIUS.ToTiles()
 	);
 }

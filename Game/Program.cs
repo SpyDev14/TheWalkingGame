@@ -36,7 +36,7 @@ public class Program
 		InitAudioDevice();
 
 		InitWindow(RenderWidth, RenderHeight, "The Walking Game");
-		SetWindowIcon(LoadImage(Path.Join(Constants.ResourcesFolder, "icon.png")));
+		SetWindowIcon(LoadImage(Path.Join(REWORK_IT.ResourcesFolder, "icon.png")));
 
 		SetWindowState(Args.WindowMode.AsConfigFlag());
 		SetTargetFPS(Args.TargetFps);
@@ -52,7 +52,7 @@ public class Program
 
 		Theme theme = Theme.Lavaland;
 
-		string mapPath = Path.Join(Constants.ResourcesFolder, "Map2.png");
+		string mapPath = Path.Join(REWORK_IT.ResourcesFolder, "Map2.png");
 		Texture2D mapTexture = LoadTexture(mapPath);
 
 		GameMap gameMap;
@@ -98,7 +98,6 @@ public class Program
 				{
 					Angle renderRotate = Angle.FromDegrees(player.InputDirection.X * 5);
 					int horizontOffset = (int)(StepSize * Math.Abs(player.StepPhase) * player.StepVisualSizeModifier.Vertical);
-					horizontOffset = (int)(-RenderHeight * 0.8 / 2);
 
 					// Sky & Floor
 					{
@@ -137,7 +136,7 @@ public class Program
 						float distance = info.Distance * MathF.Cos(angleFromCenter.Radians);
 
 						float planeDistance = (RenderWidth / 2) / MathF.Tan(player.FOV.Radians / 2);
-						int wallHeight = (int)(planeDistance / distance * Constants.TILES_PER_METER);
+						int wallHeight = (int)(planeDistance / distance * UnitConverations.TILES_PER_METER);
 
 						float wallHeightRatio = wallHeight / RenderHeight;
 						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(horizontOffset * (1 - wallHeightRatio));
@@ -244,7 +243,7 @@ public class Program
 			}
 			EndDrawing();
 
-			player.Update(deltaTime, gameMap);
+			player.Update(deltaTime);
 		}
 
 		CloseWindow();

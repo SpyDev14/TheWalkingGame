@@ -1,12 +1,7 @@
 ﻿namespace Game;
 
-internal static class Constants
+internal static class REWORK_IT
 {
-	/// <summary>
-	/// How much tiles in one meter (tiles to meters)
-	/// </summary>
-	public const float TILES_PER_METER = 1f;
-
 	//TODO: Handle it
 	public readonly static string ResourcesFolder = Path.GetFullPath("../../../../Game/Resources/");
 }
