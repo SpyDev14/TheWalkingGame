@@ -1,7 +1,7 @@
 ﻿using System.Runtime.Versioning;
 using Raylib_cs;
 
-namespace Game;
+namespace Game.Levels;
 enum GameObject : byte
 {
 	None,

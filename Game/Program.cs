@@ -96,8 +96,10 @@ public class Program
 			{
 				// World
 				{
-					Angle renderRotate = Angle.FromDegrees(player.InputDirection.X * 5);
-					int horizontOffset = (int)(StepSize * Math.Abs(player.StepPhase) * player.StepVisualSizeModifier.Vertical);
+					int horizontOffset = (int)(
+						StepSize * Math.Abs(player.StepPhase)
+						* player.StepVisualSizeModifier.Vertical
+					);
 
 					// Sky & Floor
 					{
