@@ -1,24 +1,24 @@
 ﻿using Raylib_cs;
 namespace Game.Levels;
 
-internal class Level
+internal class Level : ILevel
 {
-	public readonly Size Size;
-	private ImmutableArray<bool> CollisionField { get; }
-	public Texture2D TextureForRender { get; }
+	public Image ImageForRender { get; }
 	public bool OutsideIsSolid { get; set; }
-
 	public Vector2 SpawnPoint { get; }
+
+	private readonly Size _size;
+	private readonly ImmutableArray<bool> _collisionField;
 
 	public Level(GameObject[] field, Size size)
 	{
-		Size = size;
-		CollisionField = field.Select(x => x == GameObject.Wall).ToImmutableArray();
-		TextureForRender = GenerateRenderTexture(field, size);
+		_size = size;
+		_collisionField = field.Select(x => x == GameObject.Wall).ToImmutableArray();
+		ImageForRender = GenerateRenderImage(field, size);
 		SpawnPoint = FindSpawnPoint(field, size);
 	}
 
-	private Texture2D GenerateRenderTexture(GameObject[] field, Size size)
+	private Image GenerateRenderImage(GameObject[] field, Size size)
 	{
 		Image image = Raylib.GenImageColor(size.Width, size.Height, Color.Blank);
 		for (int y = 0; y < size.Height; y++)
@@ -36,10 +36,7 @@ internal class Level
 				Raylib.ImageDrawPixel(ref image, x, y, color);
 			}
 
-		var texture = Raylib.LoadTextureFromImage(image);
-		Raylib.UnloadImage(image);
-
-		return texture;
+		return image;
 	}
 
 	private Vector2 FindSpawnPoint(GameObject[] field, Size size)
@@ -62,8 +59,8 @@ internal class Level
 	// Collision check's
 	public bool IsOutsideMap(Vector2 pos) => IsOutsideMap((int)pos.X, (int)pos.Y);
 	public bool IsOutsideMap(int x, int y) => (
-		x < 0 || x >= Size.Width ||
-		y < 0 || y >= Size.Height
+		x < 0 || x >= _size.Width ||
+		y < 0 || y >= _size.Height
 	);
 
 	public bool IsCollided(Vector2 pos) => IsCollided((int)pos.X, (int)pos.Y);
@@ -72,8 +69,8 @@ internal class Level
 		if (IsOutsideMap(x, y))
 			return OutsideIsSolid;
 
-		int idx = y * Size.Width + x;
-		return CollisionField[idx];
+		int idx = y * _size.Width + x;
+		return _collisionField[idx];
 	}
 
 	public bool IsCircleCollided(Vector2 pos, float radius)

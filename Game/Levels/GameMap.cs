@@ -11,22 +11,23 @@ enum GameObject : byte
 
 internal class GameMap
 {
-	public readonly Size Size;
-	public ImmutableArray<bool> CollisionField { get; }
 	public Texture2D TextureForRender { get; }
 	public bool OutsideIsSolid { get; set; }
+
+	private readonly Size _size;
+	private readonly ImmutableArray<bool> _collisionField;
 
 	public Vector2 SpawnPoint => new Vector2(_spawnCell.x, _spawnCell.y) + new Vector2(0.5f);
 	private (int x, int y) _spawnCell;
 
 	public GameMap(GameObject[] field, Size size)
 	{
-		Size = size;
-		CollisionField = field.Select(x => x == GameObject.Wall).ToImmutableArray();
+		_size = size;
+		_collisionField = field.Select(x => x == GameObject.Wall).ToImmutableArray();
 
 		_spawnCell = (size.Width / 2, size.Height / 2);
-		for (int y = 0; y < Size.Height; y++)
-			for (int x = 0; x < Size.Width; x++)
+		for (int y = 0; y < _size.Height; y++)
+			for (int x = 0; x < _size.Width; x++)
 				if (field[y*size.Width+x] == GameObject.SpawnPoint)
 					_spawnCell = (x, y);
 
@@ -105,8 +106,8 @@ internal class GameMap
 	// Collision check's
 	public bool IsOutsideMap(Vector2 pos) => IsOutsideMap((int)pos.X, (int)pos.Y);
 	public bool IsOutsideMap(int x, int y) => (
-		x < 0 || x >= Size.Width ||
-		y < 0 || y >= Size.Height
+		x < 0 || x >= _size.Width ||
+		y < 0 || y >= _size.Height
 	);
 
 	public bool IsCollided(Vector2 pos) => IsCollided((int)pos.X, (int)pos.Y);
@@ -115,8 +116,8 @@ internal class GameMap
 		if (IsOutsideMap(x, y))
 			return OutsideIsSolid;
 
-		int idx = y * Size.Width + x;
-		return CollisionField[idx];
+		int idx = y * _size.Width + x;
+		return _collisionField[idx];
 	}
 
 	public bool IsCircleCollided(Vector2 pos, float radius)
