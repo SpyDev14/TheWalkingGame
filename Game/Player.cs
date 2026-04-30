@@ -24,7 +24,7 @@ internal class Player
 
 	private Angle _rotate = default;
 	public Angle Rotate => _rotate;
-	/// <summary>Position in map coords (tiles)</summary>
+	/// <summary>Position in level coords (tiles)</summary>
 	public Vector2 Position { get; private set; }
 
 
@@ -66,21 +66,21 @@ internal class Player
 	private bool _isSprint = false;
 
 	/// <summary>
-	/// Aka "ref GameMap". Returns current game map.
+	/// Aka "ref GameMap". Returns current game level.
 	/// In the future may be refactored to ILevelManager dependency.
 	/// </summary>
-	private readonly Func<GameMap> _getCurrentGameMap;
+	private readonly Func<GameLevel> _getCurrentLevel;
 
 	private readonly SoundCollection _footstepSound = new(Enumerable
-		.Range(1, 6)
+		.Range(1, 5)
 		.Select(x => $"Audio/floor{x}.ogg")
 		.Select(x => Path.Join(REWORK_IT.ResourcesFolder, x))
 	);
 
-	public Player(Vector2 pos, Func<GameMap> getCurrentGameMap)
+	public Player(Vector2 pos, Func<GameLevel> getCurrentLevel)
 	{
 		Position = pos;
-		_getCurrentGameMap = getCurrentGameMap;
+		_getCurrentLevel = getCurrentLevel;
 	}
 
 	/// <summary>
@@ -89,7 +89,7 @@ internal class Player
 	public void Update(TimeSpan deltaTime)
 	{
 		/*
-		 * map can be replaced by:
+		 * level can be replaced by:
 		 *     _levelManager.GetCurrentLevel();
 		 * who be get by:
 		 *     [Dependency] ILevelManager _levelManager = default!;
@@ -103,7 +103,7 @@ internal class Player
 		static bool IsKeyDown(Key key) => Raylib.IsKeyDown(key);
 
 		float dt = (float)deltaTime.TotalSeconds;
-		var map = _getCurrentGameMap();
+		var level = _getCurrentLevel();
 
 		float forward = 0;
 		float strafe = 0;
@@ -119,7 +119,8 @@ internal class Player
 		InputDirection = new(strafe, forward);
 		if (!InputDirection.IsZero())
 		{
-			InputDirection = InputDirection.Normalized();
+			// Test DOOM-like moving
+			// InputDirection = InputDirection.Normalized();
 			Vector2 worldDirection = (
 				(Rotate + Angle.Right).AsDirection() * InputDirection.X +
 				Rotate.AsDirection() * InputDirection.Y
@@ -136,10 +137,10 @@ internal class Player
 				_velocity = Vector2.Zero;
 
 			else _velocity -= _velocity.Normalized() * friction;
-			
+
 		}
 		// Move (apply velocity)
-		Vector2 moveDelta = CalcCollisionAdjustedDelta(_velocity * dt * UnitConverations.TILES_PER_METER, map);
+		Vector2 moveDelta = GetCollisionAdjustedDelta(_velocity * dt * UnitConverations.TILES_PER_METER, level);
 		Position += moveDelta;
 
 		// Step animation & step sound
@@ -169,27 +170,27 @@ internal class Player
 		else Raylib.ShowCursor();
 	}
 
-	private Vector2 CalcCollisionAdjustedDelta(Vector2 delta, GameMap map)
+	private Vector2 GetCollisionAdjustedDelta(Vector2 delta, GameLevel level)
 	{
 		// If way is clear, let's go
 		// If position is wrong, let escape
-		if (CanMove(delta, map) || !CanMove(Vector2.Zero, map))
+		if (CanMove(delta, level) || !CanMove(Vector2.Zero, level))
 			return delta;
 
 		Vector2 stepByX = new Vector2(delta.X, 0);
 		Vector2 stepByY = new Vector2(0, delta.Y);
 
-		if (CanMove(stepByX, map))
+		if (CanMove(stepByX, level))
 			return stepByX;
 
-		if (CanMove(stepByY, map))
+		if (CanMove(stepByY, level))
 			return stepByY;
 
 		// Don't let moving throught walls
 		return Vector2.Zero;
 	}
 
-	private bool CanMove(Vector2 delta, GameMap map) => !map.IsCircleCollided(
+	private bool CanMove(Vector2 delta, GameLevel level) => !level.IsCircleCollided(
 		Position + delta, COLLISION_RADIUS.ToTiles()
 	);
 }

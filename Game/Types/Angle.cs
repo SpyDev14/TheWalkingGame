@@ -33,35 +33,35 @@ internal struct Angle : IFormattable
 	public static Angle FromRadians(float radians) => new Angle(radians);
 	public static Angle FromDegrees(float degrees) => new Angle(DegreesToRadians(degrees));
 
-	public float Radians { get; set; } = 0;
+	public float Radians { readonly get; set; } = 0;
 	public float Degrees
 	{
-		get => RadiansToDegrees(Radians);
+		readonly get => RadiansToDegrees(Radians);
 		set => Radians = DegreesToRadians(value);
 	}
 
 	public float NormalizedDegrees
 	{
-		get => NormalizeDegrees(Degrees);
+		readonly get => NormalizeDegrees(Degrees);
 		set => Radians = DegreesToRadians(NormalizeDegrees(value));
 	}
 
 	public float NormalizedRadians
 	{
-		get => NormalizeRadians(Radians);
+		readonly get => NormalizeRadians(Radians);
 		set => Radians = NormalizeRadians(value);
 	}
 
-	public Vector2 AsDirection() => new Vector2(
+	public readonly Vector2 AsDirection() => new Vector2(
 		MathF.Cos(Radians),
 		MathF.Sin(Radians)
 	);
 
-	public Angle Normalized() => FromRadians(NormalizedRadians);
-	public bool IsNormalized() => Radians == NormalizedRadians;
+	public readonly Angle Normalized() => FromRadians(NormalizedRadians);
+	public readonly bool IsNormalized() => Radians == NormalizedRadians;
 
-	public override string ToString() => ToString(null, null);
-	public string ToString(string? format, IFormatProvider? formatProvider)
+	public readonly override string ToString() => ToString(null, null);
+	public readonly string ToString(string? format, IFormatProvider? formatProvider)
 		=> $"{Degrees.ToString(format)}° ({Radians.ToString(format)} R)";
 
 	public static Angle operator +(Angle a, Angle b) => new Angle(a.Radians + b.Radians);

@@ -7,16 +7,26 @@ namespace Game;
 
 public class Program
 {
+	/// <summary>In pixels</summary>
 	int RenderWidth { get; set; }
+
+	/// <summary>In pixels</summary>
 	int RenderHeight { get; set; }
+
+	/// <summary>In pixels</summary>
 	int HorizontPos => RenderHeight / 2;
 
+	/// <summary>In pixels</summary>
 	int StepSize => RenderHeight / 80;
-	int RenderMapHeight => RenderHeight / 5;
 
+	/// <summary>In pixels</summary>
+	int MinimapHeight => RenderHeight / 5;
+
+	/// <summary>In tiles</summary>
+	readonly Size MinimapSize = new(16, 16);
 	readonly RunArgs Args;
 
-	Raycaster _raycaster = new();
+	readonly Raycaster _raycaster = new();
 
 	public Program(RunArgs args)
 	{
@@ -51,19 +61,13 @@ public class Program
 		SetWindowMinSize(currMonitorWidth / 6, currMonitorHeight / 6);
 
 
-		Theme theme = Theme.Lavaland;
+		Theme theme = Theme.ColoredNight;
 
 		string mapPath = Path.Join(REWORK_IT.ResourcesFolder, "Map2.png");
-		Texture2D mapTexture = LoadTexture(mapPath);
-
-		GameMap gameMap;
-		if (!OperatingSystem.IsWindows()) // `Bitmap` required Windows
-			gameMap = GameMap.PlugMap;
-#pragma warning disable CA1416 // "Windows only!!!"
-		// C#, WHAT IS WRONG WITH YOU?!!! vvvvvvvvvvvvvvvv
-		else gameMap = GameMap.FromImage(new Bitmap(mapPath), static px =>
-#pragma warning restore CA1416
-		{
+		GameLevel gameMap;
+		if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1)) // `Bitmap` required Windows 6.1+
+			gameMap = CreateLevel.PlugLevel;
+		else gameMap = CreateLevel.FromImage("Default", new Bitmap(mapPath), static px => {
 			if (px.IsColorEquals(Color.White))
 				return GameObject.Wall;
 			if (px.IsColorEquals(new Color(255, 0, 0)))
@@ -71,11 +75,7 @@ public class Program
 			return GameObject.None;
 		});
 
-		gameMap.OutsideIsSolid = false;
-		mapTexture = gameMap.TextureForRender;
-
-		Player player = new Player(gameMap.SpawnPoint, () => gameMap);
-
+		Player player = new Player(gameMap.SpawnPointPos, () => gameMap);
 		bool interfaceEnabled = true;
 		while (!WindowShouldClose())
 		{
@@ -93,8 +93,24 @@ public class Program
 			if (IsKeyPressed(KeyboardKey.F7))
 				interfaceEnabled = !interfaceEnabled;
 
+			if (IsKeyPressed(KeyboardKey.B))
+				gameMap.IsOutsideSolid = !gameMap.IsOutsideSolid;
+
+			if (IsKeyPressed(KeyboardKey.Space)) UnitConverations.TILES_PER_METER += 0.125f;
+			if (IsKeyPressed(KeyboardKey.V)) UnitConverations.TILES_PER_METER -= 0.125f;
+
+			// For unload after frame drawing
+			// DON'T UNLOAD TEXTURE BEFORE EndDrawing!!!
+			// Raylib use delayed drawing (draw frame at EndDrawing,
+			// Draw functions just add commands to command buffer)
+			// Unloading BEFORE EndDrawing() let to use-after-free
+			// and texture drawed as... ASCII character sheet?...
+			// I think it's undefined behavour (my first <3).
+			Texture2D minimapAsTexture = default;
 			BeginDrawing();
 			{
+				ClearBackground(Color.Black);
+
 				// World
 				{
 					int horizontOffset = (int)(
@@ -138,14 +154,17 @@ public class Program
 
 						float distance = info.Distance * MathF.Cos(angleFromCenter.Radians);
 
-						float planeDistance = (RenderWidth / 2) / MathF.Tan(player.FOV.Radians / 2);
+						float planeDistance = RenderWidth / 2f / MathF.Tan(player.FOV.Radians / 2f);
 						int wallHeight = (int)(planeDistance / distance * UnitConverations.TILES_PER_METER);
 
 						float wallHeightRatio = wallHeight / RenderHeight;
 						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(horizontOffset * (1 - wallHeightRatio));
 
-						float t = 1 - distance / player.ViewDistance;
-						Color color = ColorLerp(theme.WallFar, theme.WallNear, t);
+						Color color = ColorLerp(
+							theme.WallFar,
+							theme.WallNear,
+							1 - distance / player.ViewDistance
+						);
 						if (theme.WallTint is not null)
 							color = ColorTint(color, theme.WallTint(info.Direction));
 
@@ -191,9 +210,20 @@ public class Program
 
 					// Map
 					{
-						float scale = RenderMapHeight / mapTexture.Height;
-						int width = (int)(mapTexture.Width * scale);
-						int height = (int)(mapTexture.Height * scale);
+						Vector2 playerMarkPosOffset = new();
+						{
+							int tilesPerPixel = MinimapHeight / MinimapSize.Height;
+							Image minimapImg = gameMap.GetMinimapImage(
+								MinimapSize, player.Position, tilesPerPixel, out playerMarkPosOffset
+							);
+							minimapAsTexture = LoadTextureFromImage(minimapImg);
+							UnloadImage(minimapImg);
+						}
+
+						float scale = MinimapHeight / (float)minimapAsTexture.Height;
+
+						int width = (int)(minimapAsTexture.Width * scale);
+						int height = (int)(minimapAsTexture.Height * scale);
 						int margin = 12;
 
 						topMargin = margin - 6;
@@ -205,20 +235,21 @@ public class Program
 							(1, Color.White)
 						}) DrawRectangle(margin - x.i, margin - x.i, width + x.i * 2, height + x.i * 2, x.c);
 
-						DrawTextureEx(mapTexture, new(margin, margin), 0, scale, Color.White);
+						DrawTextureEx(minimapAsTexture, new(margin, margin), 0, scale, Color.White);
+						// Unload texture after EndDrawing
 
 						var drawPlayer = () => {
-							float playerPointRadius = 3.5f;
-							float playerPointX = margin + player.Position.X * scale;
-							float playerPointY = margin + player.Position.Y * scale;
+							float playerMarkRadius = 3.5f;
+							float playerMarkX = margin + (minimapAsTexture.Width  / 2f + playerMarkPosOffset.X) * scale;
+							float playerMarkY = margin + (minimapAsTexture.Height / 2f + playerMarkPosOffset.Y) * scale;
 							DrawCircle(
-								(int)playerPointX,
-								(int)playerPointY,
-								playerPointRadius,
+								(int)playerMarkX,
+								(int)playerMarkY,
+								playerMarkRadius,
 								Color.Red
 							);
 							DrawRectanglePro(
-								new Rectangle(playerPointX, playerPointY, playerPointRadius * 2, 2),
+								new Rectangle(playerMarkX, playerMarkY, playerMarkRadius * 2, 2),
 								new(0, 0),
 								player.Rotate.Degrees,
 								Color.Red
@@ -235,6 +266,7 @@ public class Program
 						$"Rotate: {player.Rotate:0.##}",
 						$"Speed: {player.CurrentSpeed:0.###} / {player.CurrentMaxSpeed:0.###}",
 						$"FOV: {player.FOV:0.##}",
+						$"Tiles per meter: {UnitConverations.TILES_PER_METER}",
 					];
 
 					for (int i = 0; i < labels.Length; i++)
@@ -246,15 +278,15 @@ public class Program
 			}
 			EndDrawing();
 
+			if (minimapAsTexture.Id != 0)
+				UnloadTexture(minimapAsTexture);
+
 			player.Update(deltaTime);
 		}
 
 		CloseWindow();
 	}
-	private static void Main(string[] args)
-	{
-		new Program().Run();
-	}
+	private static void Main(string[] args) => new Program().Run();
 }
 
 public readonly record struct RunArgs(
@@ -263,87 +295,3 @@ public readonly record struct RunArgs(
 	bool EnableVSync,
 	WindowMode WindowMode = WindowMode.Resizable
 );
-
-public enum WindowMode
-{
-	Fullscreen,
-	Borderless,
-	Resizable,
-}
-public static class impl_WindowMode
-{
-	// Previously used in several places
-	public static ConfigFlags AsConfigFlag(this WindowMode self) => self switch
-	{
-		WindowMode.Resizable  => ConfigFlags.ResizableWindow,
-		WindowMode.Borderless => ConfigFlags.BorderlessWindowMode,
-		WindowMode.Fullscreen => ConfigFlags.FullscreenMode,
-		_ => throw new ArgumentOutOfRangeException(nameof(WindowMode)),
-	};
-}
-
-readonly record struct Theme(
-	Color WallNear,
-	Color WallFar,
-	Color FloorNear,
-	Color FloorFar,
-	Color Sky,
-	Func<Direction, Color>? WallTint = null
-)
-{
-	public readonly static Theme MonoLight = new Theme(
-		WallNear: new Color(255, 255, 255),
-		WallFar: new Color(127, 127, 127),
-		FloorNear: new Color(55, 55, 55),
-		FloorFar: new Color(15, 15, 15),
-		Sky: new Color(0, 0, 0)
-	);
-
-	public readonly static Theme ColoredNight = new Theme(
-		WallNear: MonoLight.WallNear,
-		WallFar: MonoLight.WallFar,
-		FloorNear: MonoLight.FloorNear,
-		FloorFar: MonoLight.FloorFar,
-		Sky: MonoLight.Sky,
-		WallTint: static dir => ColorTint(dir switch
-		{
-			Direction.South => Color.Beige,
-			Direction.North => Color.SkyBlue,
-			Direction.East => Color.Pink,
-			Direction.West or _ => Color.Violet // (Direction)228 - is valid Direction (enum) in C# 😡
-		}, Color.White)
-	);
-
-	public readonly static Theme ColoredDay = new Theme(
-		WallNear: ColoredNight.WallNear,
-		WallFar: ColoredNight.WallFar,
-		FloorNear: ColoredNight.FloorNear,
-		FloorFar: ColoredNight.FloorFar,
-		Sky: ColorTint(Color.SkyBlue, Color.White),
-		WallTint: ColoredNight.WallTint
-	);
-
-	public readonly static Theme MonoDark = new Theme(
-		WallNear: new Color(16, 16, 16),
-		WallFar: new Color(0, 0, 0),
-		FloorNear: new Color(16, 16, 16),
-		FloorFar: new Color(0, 0, 0),
-		Sky: new Color(0, 0, 0)
-	);
-
-	public readonly static Theme Lavaland = new Theme(
-		WallNear: new Color(0x60, 0x48, 0x48),
-		WallFar: new Color(60, 47, 47),
-		FloorNear: new Color(56, 46, 46),
-		FloorFar: new Color(35, 30, 30),
-		Sky: new Color(100, 11, 11)
-	);
-
-	public readonly static Theme Backroums = new Theme(
-		WallNear: new Color(172, 165, 53),
-		WallFar: new Color(68, 59, 0),
-		FloorNear: new Color(114, 92, 17),
-		FloorFar: new Color(46, 32, 0),
-		Sky: new Color(154, 143, 64)
-	);
-}

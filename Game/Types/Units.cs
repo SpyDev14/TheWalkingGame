@@ -54,7 +54,7 @@ internal static class UnitConverations
 	/// <summary>
 	/// How much tiles in one meter (tiles to meters)
 	/// </summary>
-	public const float TILES_PER_METER = 1f;
+	public static float TILES_PER_METER = 1f;
 
 	/// <summary>Convert meters to tiles</summary>
 	public static float ToTiles(this float meters) => meters * TILES_PER_METER;
