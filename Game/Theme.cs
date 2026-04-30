@@ -1,5 +1,7 @@
 using static Raylib_cs.Raylib;
-namespace Game.Types;
+using Game.Maths;
+
+namespace Game;
 
 readonly record struct Theme(
 	Color WallNear,

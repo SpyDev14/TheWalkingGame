@@ -1,5 +1,6 @@
 using Raylib_cs;
-namespace Game.Types;
+
+namespace Game;
 
 
 public enum WindowMode
