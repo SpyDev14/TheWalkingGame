@@ -1,6 +1,6 @@
 ﻿using Game.Audio;
 using Game.Levels;
-using Game.Types;
+using Game.Maths;
 using Raylib_cs;
 using Key = Raylib_cs.KeyboardKey;
 using Raylib = Raylib_cs.Raylib;

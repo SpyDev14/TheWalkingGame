@@ -1,6 +1,6 @@
-﻿using static Game.Types.Angle.MathOperations;
+﻿using static Game.Maths.Angle.MathOperations;
 
-namespace Game.Types;
+namespace Game.Maths;
 
 internal struct Angle : IFormattable
 {

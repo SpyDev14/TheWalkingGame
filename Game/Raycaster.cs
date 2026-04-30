@@ -1,4 +1,4 @@
-﻿using Game.Types;
+﻿using Game.Maths;
 
 namespace Game;
 
@@ -32,7 +32,7 @@ internal class Raycaster
 		float distanceDeltaX = direction.X != 0 ? MathF.Abs(1 / direction.X) : float.PositiveInfinity;
 		// Сколько нужно пройти по лучу, чтобы сменить одну клетку по горизонтали
 		float distanceDeltaY = direction.Y != 0 ? MathF.Abs(1 / direction.Y) : float.PositiveInfinity;
-		
+
 		// Расстояние до стороны следующей клетки.
 		// Начинаем проверять с первой перед лучём
 		// До следующей вертикальной стороны клетки
