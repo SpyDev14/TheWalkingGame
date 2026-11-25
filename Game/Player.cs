@@ -140,7 +140,7 @@ internal class Player
 
 		}
 		// Move (apply velocity)
-		Vector2 moveDelta = GetCollisionAdjustedDelta(_velocity * dt * UnitConverations.TILES_PER_METER, level);
+		Vector2 moveDelta = GetCollisionAdjustedDelta(_velocity * dt * CVars.TilesPerMeter, level);
 		Position += moveDelta;
 
 		// Step animation & step sound

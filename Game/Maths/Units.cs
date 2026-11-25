@@ -51,14 +51,9 @@ internal struct Tiles<T> where T : INumber<T>
 
 internal static class UnitConverations
 {
-	/// <summary>
-	/// How much tiles in one meter (tiles to meters)
-	/// </summary>
-	public static float TILES_PER_METER = 1f;
-
 	/// <summary>Convert meters to tiles</summary>
-	public static float ToTiles(this float meters) => meters * TILES_PER_METER;
+	public static float ToTiles(this float meters) => meters * CVars.TilesPerMeter;
 
 	/// <summary>Convert tiles to meters</summary>
-	public static float ToMeters(this float tiles) => tiles / TILES_PER_METER;
+	public static float ToMeters(this float tiles) => tiles / CVars.TilesPerMeter;
 }

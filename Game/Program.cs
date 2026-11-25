@@ -96,8 +96,8 @@ public class Program
 			if (IsKeyPressed(KeyboardKey.B))
 				gameMap.IsOutsideSolid = !gameMap.IsOutsideSolid;
 
-			if (IsKeyPressed(KeyboardKey.Space)) UnitConverations.TILES_PER_METER += 0.125f;
-			if (IsKeyPressed(KeyboardKey.V)) UnitConverations.TILES_PER_METER -= 0.125f;
+			if (IsKeyPressed(KeyboardKey.Space)) CVars.TilesPerMeter += 0.125f;
+			if (IsKeyPressed(KeyboardKey.V)) CVars.TilesPerMeter -= 0.125f;
 
 			// For unload after frame drawing
 			// DON'T UNLOAD TEXTURE BEFORE EndDrawing!!!
@@ -155,7 +155,7 @@ public class Program
 						float distance = info.Distance * MathF.Cos(angleFromCenter.Radians);
 
 						float planeDistance = RenderWidth / 2f / MathF.Tan(player.FOV.Radians / 2f);
-						int wallHeight = (int)(planeDistance / distance * UnitConverations.TILES_PER_METER);
+						int wallHeight = (int)(planeDistance / distance * CVars.TilesPerMeter);
 
 						float wallHeightRatio = wallHeight / RenderHeight;
 						int topMargin = (RenderHeight - wallHeight) / 2 + (int)(horizontOffset * (1 - wallHeightRatio));
@@ -266,7 +266,7 @@ public class Program
 						$"Rotate: {player.Rotate:0.##}",
 						$"Speed: {player.CurrentSpeed:0.###} / {player.CurrentMaxSpeed:0.###}",
 						$"FOV: {player.FOV:0.##}",
-						$"Tiles per meter: {UnitConverations.TILES_PER_METER}",
+						$"Tiles per meter: {CVars.TilesPerMeter}",
 					];
 
 					for (int i = 0; i < labels.Length; i++)
