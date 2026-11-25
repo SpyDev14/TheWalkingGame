@@ -4,8 +4,9 @@
 Иммитация 3D реализована через raycasting (с позиции игрока бросаются лучи, чем дистанция меньше - тем стена на экране больше).
 
 Иллюстрация:
-<img src="https://hackaday.com/wp-content/uploads/2021/09/ray.gig_.gif" width="100%">
+
+<img src="https://hackaday.com/wp-content/uploads/2021/09/ray.gig_.gif" width="60%">
 
 ### Как выглядит
 Pre-s: видео со звуком. Проверьте включен ли он, если его у вас нет.
-<video src="./preview.mp4" width="100%">
+<video src="https://github.com/user-attachments/assets/7226732d-6793-4b30-b0fe-5e164db9b535" width="100%">
