@@ -47,7 +47,7 @@ public class Program
 		InitAudioDevice();
 
 		InitWindow(RenderWidth, RenderHeight, "The Walking Game");
-		SetWindowIcon(LoadImage(Path.Join(REWORK_IT.ResourcesFolder, "icon.png")));
+		SetWindowIcon(LoadImage(Path.Join(CVars.ResourcesDirectory, "icon.png")));
 
 		SetWindowState(Args.WindowMode.AsConfigFlag());
 		SetTargetFPS(Args.TargetFps);
@@ -63,7 +63,7 @@ public class Program
 
 		Theme theme = Theme.ColoredNight;
 
-		string mapPath = Path.Join(REWORK_IT.ResourcesFolder, "Map2.png");
+		string mapPath = Path.Join(CVars.ResourcesDirectory, "Map2.png");
 		GameLevel gameMap;
 		if (!OperatingSystem.IsWindowsVersionAtLeast(6, 1)) // `Bitmap` required Windows 6.1+
 			gameMap = CreateLevel.PlugLevel;

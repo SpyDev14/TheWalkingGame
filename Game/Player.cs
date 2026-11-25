@@ -74,7 +74,7 @@ internal class Player
 	private readonly SoundCollection _footstepSound = new(Enumerable
 		.Range(1, 5)
 		.Select(x => $"Audio/floor{x}.ogg")
-		.Select(x => Path.Join(REWORK_IT.ResourcesFolder, x))
+		.Select(x => Path.Join(CVars.ResourcesDirectory, x))
 	);
 
 	public Player(Vector2 pos, Func<GameLevel> getCurrentLevel)
